@@ -1,9 +1,9 @@
-
 import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
     @EnvironmentObject private var appEnvironment: AppEnvironment
+    @Environment(\.openWindow) var openWindow
     
     @State private var selectedLogID: LogEntry.ID?
 
@@ -38,21 +38,38 @@ struct ContentView: View {
 
     @ViewBuilder
     private var sidebar: some View {
-        if viewModel.isLoadingKeys {
-            ProgressView("Loading Keys...")
-        } else if viewModel.virtualKeys.isEmpty {
-            Text("No API Keys found.")
-                .foregroundColor(.secondary)
-        } else {
-            List(viewModel.virtualKeys, selection: $viewModel.selectedKeyID) {
-                key in
-                VStack(alignment: .leading) {
-                    Text(key.keyAlias ?? key.keyName).font(.headline)
-                    Text("\(String(format: "%.4f", key.spend)) USD").font(.caption)
+        VStack {
+            if viewModel.isLoadingKeys {
+                ProgressView("Loading Keys...")
+            } else if viewModel.virtualKeys.isEmpty {
+                Text("No API Keys found.")
+                    .foregroundColor(.secondary)
+            } else {
+                List(viewModel.virtualKeys, selection: $viewModel.selectedKeyID) {
+                    key in
+                    VStack(alignment: .leading) {
+                        Text(key.keyAlias ?? key.keyName).font(.headline)
+                        Text("\(String(format: "%.4f", key.spend)) USD").font(.caption)
+                    }
+                    .tag(key.id)
                 }
-                .tag(key.id)
+                .navigationSplitViewColumnWidth(min: 200, ideal: 250)
             }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 250)
+            
+            Spacer()
+            
+            HStack {
+                Button(action: { openWindow(id: "settings") }) {
+                    Image(systemName: "gearshape")
+                        .font(.title2)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .help("Settings")
+                
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
         }
     }
 
