@@ -5,8 +5,8 @@ struct LogDetailView: View {
     let log: LogEntry?
 
     var body: some View {
-        ScrollView {
-            if let log = self.log {
+        if let log = self.log {
+            ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header(log: log)
                     Divider()
@@ -15,13 +15,18 @@ struct LogDetailView: View {
                     payloads(log: log)
                 }
                 .padding()
-            } else {
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            VStack {
+                Spacer()
                 Text("Select a log to see details")
                     .font(.title)
                     .foregroundColor(.secondary)
+                Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     @ViewBuilder
