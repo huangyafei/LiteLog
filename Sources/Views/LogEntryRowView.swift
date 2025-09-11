@@ -11,13 +11,13 @@ struct LogEntryRowView: View {
                     .foregroundColor(log.status == "success" ? .green : .red)
                 Text(log.model).font(.headline)
                 Spacer()
-                Text(formattedDate(log.startTime))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text("\(String(format: "%.6f", log.spend)) USD")
             }
             
             HStack {
-                Text("\(String(format: "%.6f", log.spend)) USD")
+                Text(formattedDate(log.startTime))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 Spacer()
                 Text("\(duration(from: log.startTime, to: log.endTime))s")
             }
