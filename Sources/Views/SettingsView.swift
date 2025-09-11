@@ -12,11 +12,17 @@ struct SettingsView: View {
                 .font(.title2)
                 .padding(.bottom)
 
-            TextField("Base URL (e.g., https://litellm.example.com)", text: $viewModel.baseURL)
+            TextField("Base URL", text: $viewModel.baseURL)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
-            SecureField("Admin API Key", text: $viewModel.adminApiKey)
+            SecureField("API Key", text: $viewModel.adminApiKey)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+            
+            Text("Your API Key is stored only on your local device and is not sent to the application developer.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.bottom, 5)
+                .fixedSize(horizontal: false, vertical: true)
             
             HStack {
                 Button("Cancel") {
@@ -34,7 +40,7 @@ struct SettingsView: View {
             .padding(.top)
         }
         .padding()
-        .frame(width: 450, height: 200)
+        .frame(maxHeight: 250)
         .onAppear {
             viewModel.loadSettings()
         }
