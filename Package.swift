@@ -21,6 +21,7 @@ let package = Package(
                 .product(name: "Splash", package: "Splash")
             ],
             path: "Sources",
+            exclude: ["Info.plist"],
             swiftSettings: [
                 .define("SWIFT_PACKAGE")
             ],
