@@ -20,6 +20,7 @@ class ContentViewModel: ObservableObject {
 
     private var apiService: APIService?
     private let lastSelectedKeyIDKey = "LiteLogLastSelectedKeyID"
+    private var logsCache: [String: [LogEntry]] = [:] // Cache for logs
 
     func setAPIService(_ apiService: APIService?) {
         self.apiService = apiService
@@ -29,6 +30,7 @@ class ContentViewModel: ObservableObject {
             self.virtualKeys = []
             self.logEntries = []
             self.errorMessage = "Settings are not configured. Please configure them from the menu."
+            self.logsCache = [:] // Clear cache if API service is reset
         }
     }
 
@@ -37,6 +39,7 @@ class ContentViewModel: ObservableObject {
         
         isLoadingKeys = true
         errorMessage = nil
+        self.logsCache = [:] // Clear cache on full key refresh
         
         Task {
             do {
@@ -60,6 +63,12 @@ class ContentViewModel: ObservableObject {
     }
 
     func fetchLogs(for key: VirtualKey) {
+        // Check cache first
+        if let cachedLogs = logsCache[key.token] {
+            self.logEntries = cachedLogs
+            return
+        }
+
         guard let apiService = apiService else { return }
         
         isLoadingLogs = true
@@ -70,6 +79,7 @@ class ContentViewModel: ObservableObject {
             do {
                 let logs = try await apiService.fetchLogs(for: key.token)
                 self.logEntries = logs
+                self.logsCache[key.token] = logs // Store in cache
             } catch {
                 print("Error fetching data: \(error)")
                 self.errorMessage = error.localizedDescription
@@ -80,6 +90,7 @@ class ContentViewModel: ObservableObject {
     
     func manualRefresh() {
         if apiService != nil {
+            self.logsCache = [:] // Clear cache on manual refresh
             fetchKeys()
         } 
     }
