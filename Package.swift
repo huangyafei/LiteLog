@@ -11,9 +11,15 @@ let package = Package(
             name: "LiteLog",
             targets: ["LiteLog"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/JohnSundell/Splash.git", from: "0.1.0")
+    ],
     targets: [
         .executableTarget(
             name: "LiteLog",
+            dependencies: [
+                .product(name: "Splash", package: "Splash")
+            ],
             path: "Sources",
             swiftSettings: [
                 .define("SWIFT_PACKAGE")

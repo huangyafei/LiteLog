@@ -31,8 +31,8 @@ struct ContentView: View {
             }
         }
         
-        .onAppear {
-            viewModel.setAPIService(appEnvironment.apiService)
+        .onReceive(appEnvironment.$apiService) { newAPIService in
+            viewModel.setAPIService(newAPIService)
         }
     }
 

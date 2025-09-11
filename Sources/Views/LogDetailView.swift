@@ -57,10 +57,10 @@ struct LogDetailView: View {
     private func payloads(log: LogEntry) -> some View {
         VStack(alignment: .leading) {
             Text("Request Payload").font(.headline)
-            JsonView(data: log.requestPayload)
+            HighlightedJsonView(data: log.requestPayload)
             
             Text("Response Payload").font(.headline).padding(.top)
-            JsonView(data: log.responsePayload)
+            HighlightedJsonView(data: log.responsePayload)
         }
     }
     
@@ -90,34 +90,4 @@ struct DetailRow: View {
     }
 }
 
-struct JsonView: View {
-    let data: Data?
 
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(NSColor.textBackgroundColor))
-            
-            ScrollView {
-                Text(prettyPrintedJson())
-                    .font(.system(.body, design: .monospaced))
-                    .padding()
-                    .textSelection(.enabled)
-            }
-        }
-        .frame(minHeight: 100, maxHeight: 400)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-        )
-    }
-
-    private func prettyPrintedJson() -> String {
-        guard let data = data else { return "No data" }
-        guard let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
-              let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted) else {
-            return String(data: data, encoding: .utf8) ?? "Failed to decode as UTF-8 string"
-        }
-        return String(data: prettyData, encoding: .utf8) ?? ""
-    }
-}
