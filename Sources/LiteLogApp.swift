@@ -27,6 +27,12 @@ struct LiteLogApp: App {
                 }
         }
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About LiteLog") {
+                    openWindow(id: "about")
+                }
+            }
+
             CommandMenu("LiteLog") {
                 Button("Quit LiteLog") {
                     NSApplication.shared.terminate(nil)
@@ -45,5 +51,11 @@ struct LiteLogApp: App {
             SettingsView()
         }
         .windowResizability(.contentSize)
+
+        Window("About LiteLog", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
     }
 }
