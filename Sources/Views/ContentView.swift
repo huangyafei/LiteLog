@@ -201,6 +201,7 @@ struct ContentView: View {
                 }
             }
         }
+                .navigationSplitViewColumnWidth(min: 450, ideal: 500)
     }
     
     private var selectedLog: LogEntry? {
