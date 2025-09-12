@@ -45,6 +45,14 @@ struct LiteLogApp: App {
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
+            
+            CommandGroup(replacing: .help) {
+                Button("LiteLog Help") {
+                    if let url = URL(string: "https://github.com/huangyafei/LiteLog") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
         }
         
         Window("Settings", id: "settings") {
