@@ -10,28 +10,19 @@ struct HighlightedJsonView: View {
     
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            ScrollView {
-                Text(highlightedText())
-                    .font(.system(size: 12, design: .monospaced))
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .background(Color(red: 15/255, green: 17/255, blue: 25/255))
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-            )
-
-            Button(action: copyToClipboard) {
-                Image(systemName: "doc.on.doc")
-            }
-            .padding(8)
-            .buttonStyle(PlainButtonStyle())
-            .foregroundColor(.white)
+        ScrollView {
+            Text(highlightedText())
+                .font(DesignSystem.Typography.mono)
+                .padding(DesignSystem.Spacing.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(minHeight: 100, maxHeight: .infinity)
+        .background(DesignSystem.Colors.backgroundSecondary)
+        .cornerRadius(DesignSystem.CornerRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.lg)
+                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+        )
+        .frame(minHeight: 120, maxHeight: .infinity)
     }
 
     private func prettyPrintedJsonString() -> String {

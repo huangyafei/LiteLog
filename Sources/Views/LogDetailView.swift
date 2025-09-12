@@ -5,67 +5,177 @@ struct LogDetailView: View {
     let log: LogEntry?
 
     var body: some View {
-        if let log = self.log {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    header(log: log)
-                    Divider()
-                    details(log: log)
-                    Divider()
-                    payloads(log: log)
+        ZStack {
+            DesignSystem.Colors.background
+                .ignoresSafeArea(.all)
+            
+            if let log = self.log {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxl) {
+                        header(log: log)
+                        details(log: log)
+                        payloads(log: log)
+                    }
+                    .padding(.horizontal, DesignSystem.Spacing.xxl)
+                    .padding(.vertical, DesignSystem.Spacing.xl)
                 }
-                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: DesignSystem.Spacing.lg) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 48))
+                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                    
+                    VStack(spacing: DesignSystem.Spacing.sm) {
+                        Text("Select a log to see details")
+                            .font(DesignSystem.Typography.title)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                        
+                        Text("Choose a log entry from the list to view its complete information")
+                            .font(DesignSystem.Typography.body)
+                            .foregroundColor(DesignSystem.Colors.textTertiary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            VStack {
-                Spacer()
-                Text("Select a log to see details")
-                    .font(.title)
-                    .foregroundColor(.secondary)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
     
     @ViewBuilder
     private func header(log: LogEntry) -> some View {
-        HStack {
-            Image(systemName: log.status == "success" ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundColor(log.status == "success" ? .green : .red)
-                .font(.largeTitle)
-            VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+            HStack(alignment: .center, spacing: DesignSystem.Spacing.lg) {
+                StatusBadge(
+                    status: log.status,
+                    isSuccess: log.status == "success"
+                )
+                
+                Spacer()
+                
+                Text("\(String(format: "%.8f", log.spend)) USD")
+                    .font(DesignSystem.Typography.titleSmall)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+                    .padding(.vertical, DesignSystem.Spacing.sm)
+                    .background(DesignSystem.Colors.surface)
+                    .cornerRadius(DesignSystem.CornerRadius.md)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.md)
+                            .stroke(DesignSystem.Colors.border, lineWidth: 1)
+                    )
+            }
+            
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
                 Text(log.model)
-                    .font(.title)
-                    .bold()
-                Text(log.requestId)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(DesignSystem.Typography.titleLarge)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
+                
+                Text("Request ID: \(log.requestId)")
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundColor(DesignSystem.Colors.textTertiary)
+                    .textSelection(.enabled)
             }
         }
+        .padding(DesignSystem.Spacing.xl)
+        .linearCard()
     }
     
     @ViewBuilder
     private func details(log: LogEntry) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            DetailRow(label: "Status", value: log.status.capitalized)
-            DetailRow(label: "Spend", value: "\(String(format: "%.8f", log.spend)) USD")
-            DetailRow(label: "Start Time", value: formattedDate(log.startTime))
-            DetailRow(label: "End Time", value: formattedDate(log.endTime))
-            DetailRow(label: "Total Tokens", value: "\(log.totalTokens ?? 0)")
-            DetailRow(label: "User", value: log.user ?? "N/A")
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+            Text("Details")
+                .font(DesignSystem.Typography.title)
+                .foregroundColor(DesignSystem.Colors.textPrimary)
+            
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                DetailRow(label: "Start Time", value: formattedDate(log.startTime))
+                DetailRow(label: "End Time", value: formattedDate(log.endTime))
+                DetailRow(label: "Duration", value: "\(duration(from: log.startTime, to: log.endTime))s")
+                
+                if let totalTokens = log.totalTokens {
+                    DetailRow(label: "Total Tokens", value: "\(totalTokens)")
+                }
+                
+                if let promptTokens = log.promptTokens {
+                    DetailRow(label: "Prompt Tokens", value: "\(promptTokens)")
+                }
+                
+                if let completionTokens = log.completionTokens {
+                    DetailRow(label: "Completion Tokens", value: "\(completionTokens)")
+                }
+                
+                if let user = log.user, !user.isEmpty {
+                    DetailRow(label: "User", value: user)
+                }
+                
+                if let cacheHit = log.cacheHit {
+                    DetailRow(label: "Cache Hit", value: cacheHit)
+                }
+            }
         }
+        .padding(DesignSystem.Spacing.xl)
+        .linearCard()
     }
     
     @ViewBuilder
     private func payloads(log: LogEntry) -> some View {
-        VStack(alignment: .leading) {
-            Text("Request Payload").font(.headline)
-            HighlightedJsonView(data: log.requestPayload)
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxl) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                HStack {
+                    Text("Request Payload")
+                        .font(DesignSystem.Typography.title)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        copyPayloadToClipboard(log.requestPayload)
+                    }) {
+                        HStack(spacing: DesignSystem.Spacing.xs) {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 12))
+                            Text("Copy")
+                                .font(DesignSystem.Typography.caption)
+                        }
+                    }
+                    .buttonStyle(LinearButtonStyle(variant: .ghost))
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                }
+                
+                HighlightedJsonView(data: log.requestPayload)
+                    .frame(minHeight: 200)
+            }
+            .padding(DesignSystem.Spacing.xl)
+            .linearCard()
             
-            Text("Response Payload").font(.headline).padding(.top)
-            HighlightedJsonView(data: log.responsePayload)
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+                HStack {
+                    Text("Response Payload")
+                        .font(DesignSystem.Typography.title)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        copyPayloadToClipboard(log.responsePayload)
+                    }) {
+                        HStack(spacing: DesignSystem.Spacing.xs) {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 12))
+                            Text("Copy")
+                                .font(DesignSystem.Typography.caption)
+                        }
+                    }
+                    .buttonStyle(LinearButtonStyle(variant: .ghost))
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                }
+                
+                HighlightedJsonView(data: log.responsePayload)
+                    .frame(minHeight: 200)
+            }
+            .padding(DesignSystem.Spacing.xl)
+            .linearCard()
         }
     }
     
@@ -77,6 +187,32 @@ struct LogDetailView: View {
         }
         return "Invalid Date"
     }
+    
+    private func duration(from start: String, to end: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let startDate = formatter.date(from: start), let endDate = formatter.date(from: end) {
+            let duration = endDate.timeIntervalSince(startDate)
+            return String(format: "%.3f", duration)
+        }
+        return "--"
+    }
+    
+    private func copyPayloadToClipboard(_ data: Data?) {
+        guard let data = data else { return }
+        
+        let prettyJsonString: String
+        if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
+           let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted) {
+            prettyJsonString = String(data: prettyData, encoding: .utf8) ?? ""
+        } else {
+            prettyJsonString = String(data: data, encoding: .utf8) ?? ""
+        }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(prettyJsonString, forType: .string)
+    }
 }
 
 struct DetailRow: View {
@@ -84,14 +220,20 @@ struct DetailRow: View {
     let value: String
     
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .firstTextBaseline, spacing: DesignSystem.Spacing.md) {
             Text(label)
-                .font(.headline)
-                .frame(width: 120, alignment: .leading)
+                .font(DesignSystem.Typography.bodyMedium)
+                .foregroundColor(DesignSystem.Colors.textSecondary)
+                .frame(width: 140, alignment: .leading)
+            
             Text(value)
-                .font(.body)
+                .font(DesignSystem.Typography.body)
+                .foregroundColor(DesignSystem.Colors.textPrimary)
                 .textSelection(.enabled)
+            
+            Spacer()
         }
+        .padding(.vertical, DesignSystem.Spacing.xs)
     }
 }
 
