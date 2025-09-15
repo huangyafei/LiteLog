@@ -2,8 +2,20 @@
 .DS_Store
 
 # Swift Package Manager
+# Keep these in case of mixed-use projects
 .build/
 Packages/
-*.xcodeproj
-*.xcworkspace
 *.swiftpm
+
+# Xcode
+#
+# It is recommended to share the .xcodeproj file for project structure,
+# but ignore user-specific files and build products.
+
+# Build products
+/build/
+/DerivedData/
+
+# User-specific files
+*.xcworkspace
+*.xcuserdatad/
