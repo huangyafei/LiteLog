@@ -143,8 +143,7 @@ struct LogDetailView: View {
                     .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
                 
-                HighlightedJsonView(data: log.requestPayload)
-                    .frame(minHeight: 200)
+                JsonPayloadView(data: log.requestPayload)
             }
             .padding(DesignSystem.Spacing.xl)
             .linearCard()
@@ -171,8 +170,7 @@ struct LogDetailView: View {
                     .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
                 
-                HighlightedJsonView(data: log.responsePayload)
-                    .frame(minHeight: 200)
+                JsonPayloadView(data: log.responsePayload)
             }
             .padding(DesignSystem.Spacing.xl)
             .linearCard()
@@ -212,6 +210,36 @@ struct LogDetailView: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(prettyJsonString, forType: .string)
+    }
+}
+
+private struct JsonPayloadView: View {
+    let data: Data?
+
+    var body: some View {
+        ScrollView {
+            Text(prettyPrintedJsonString())
+                .font(DesignSystem.Typography.mono)
+                .padding(DesignSystem.Spacing.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundColor(DesignSystem.Colors.textPrimary)
+        }
+        .background(DesignSystem.Colors.backgroundSecondary)
+        .cornerRadius(DesignSystem.CornerRadius.lg)
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.lg)
+                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+        )
+        .frame(minHeight: 200)
+    }
+
+    private func prettyPrintedJsonString() -> String {
+        guard let data = data else { return "No data" }
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
+              let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted) else {
+            return String(data: data, encoding: .utf8) ?? "Failed to decode as UTF-8 string"
+        }
+        return String(data: prettyData, encoding: .utf8) ?? ""
     }
 }
 

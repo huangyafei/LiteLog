@@ -4,7 +4,7 @@
 
 **项目名称**: LiteLog
 
-**目标**: 一款基于 Swift Package Manager 构建的原生 macOS 应用程序，用于连接到用户的 LiteLLM 代理实例，方便地查看和管理通过不同 API Key 生成的请求日志。
+**目标**: 一款基于 Xcode 和 SwiftUI 构建的原生 macOS 应用程序，用于连接到用户的 LiteLLM 代理实例，方便地查看和管理通过不同 API Key 生成的请求日志。
 
 **核心价值**: 提供一个比 Web UI 或命令行更流畅、更集成、更高效的日志监控体验，专注于 API Key 管理和日志审查。
 
@@ -43,7 +43,7 @@
 - **主窗口布局**: 采用经典的 `NavigationSplitView` 实现三栏式布局：
     - **左栏 (Sidebar)**: 显示虚拟 Key 列表，采用卡片式设计。每个 API Key 卡片显示名称/别名和消费金额，当前选中的 Key 有蓝色高亮边框和背景。在侧边栏顶部显示"API Keys"标题和计数，底部提供设置按钮。整个卡片区域可点击选择。
     - **中栏 (Content List)**: 显示所选 Key 的日志条目列表，采用现代化卡片设计。每条日志卡片显示状态徽章、模型名称、时间戳、耗时、消费和 Token 数量。卡片具有悬停效果，整个区域可点击。顶部显示"Logs"标题和日志计数。该栏的最小宽度为 450px，理想宽度为 500px。
-    - **右栏 (Detail View)**: 显示所选日志的详细信息，采用卡片分组布局。包含日志概览、详细信息和载荷数据三个卡片区域。JSON 载荷采用语法高亮显示，并提供拷贝功能。当未选中日志时显示居中的提示文本。
+    - **右栏 (Detail View)**: 显示所选日志的详细信息，采用卡片分组布局。包含日志概览、详细信息和载荷数据三个卡片区域。JSON 载荷经过格式化后以纯文本形式显示，并提供拷贝功能。当未选中日志时显示居中的提示文本。
 
 - **设置界面**:
     - 采用现代化表单设计，使用自定义的 `LinearTextFieldStyle` 样式。
@@ -71,17 +71,12 @@
 
 ### 4. 架构与关键实现细节
 
-- **项目类型**: 基于 Swift Package Manager (SPM) 的可执行程序，未使用传统的 Xcode Project (.xcodeproj)。
+- **项目类型**: 基于 Xcode 项目 (.xcodeproj) 的标准 macOS 应用程序。项目已从原先的 Swift Package Manager (SPM) 结构迁移，以解决原生应用打包和配置的复杂性。
 - **设计系统架构**: 
     - **DesignSystem.swift**: 中央化的设计系统，包含颜色、字体、间距、圆角等设计 Token。
     - **自定义样式**: 实现了 `LinearCardStyle`、`LinearButtonStyle`、`LinearTextFieldStyle` 等自定义 ViewModifier。
     - **组件复用**: `StatusBadge`、`KeyRowView` 等可复用组件，确保界面一致性。
     - **交互处理**: 使用 `.onTapGesture` 替代 Button 包装，实现全区域可点击的卡片交互。
-- **应用激活问题与解决方案**: 
-    - **问题**: 直接通过 SPM 构建的 App 在 `swift run` 时无法成为前台激活应用，导致菜单栏不显示。
-    - **解决方案**: 采用了两种方式确保应用被识别为标准的前台应用：
-        1.  **嵌入 Info.plist**: 在 `Package.swift` 中通过 `linkerSettings` 的 `-sectcreate` 标志，强制将一个自定义的 `Info.plist` 文件嵌入到编译好的可执行文件中。该 `Info.plist` 文件中明确设置 `LSApplicationActivationPolicy` 为 `regular`。
-        2.  **代码强制激活**: 在 `LiteLogApp.swift` 的 `init()` 方法中，通过代码 `NSApplication.shared.setActivationPolicy(.regular)` 和 `NSApplication.shared.activate(ignoringOtherApps: true)` 再次强制设置和激活应用，作为双重保障。
 - **状态管理**: 
     - 使用一个 `AppEnvironment` 的 `ObservableObject` 在根视图注入，用于管理全局状态，如 `APIService` 实例。
     - `ContentViewModel` 和 `SettingsViewModel` 分别管理主视图和设置视图的状态和业务逻辑。
@@ -151,9 +146,7 @@ struct LogEntry: Codable, Identifiable, Hashable {
 
 - **目标平台**: macOS 14 (Sonoma) 或更高。
 - **开发语言与框架**: Swift 与 SwiftUI。
-- **项目管理**: Swift Package Manager (SPM)。
+- **项目管理**: Xcode (通过 .xcodeproj)。
 - **应用名称**: `LiteLog`
 - **依赖**: 
-    - `Cocoa`: 在 `Package.swift` 中明确链接，以辅助解决应用激活问题。
-    - `Splash`: 用于代码语法高亮。
-    - 无其他第三方依赖。
+    - 无第三方依赖。
