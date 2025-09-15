@@ -39,6 +39,7 @@
     - **颜色系统**: 基于 Linear 的配色方案，主色调为蓝色 (`rgb(61, 130, 255)`)，背景色采用深蓝黑渐变 (`rgb(5, 5, 10)` 到 `rgb(20, 23, 33)`)。
     - **组件样式**: 统一的卡片式设计，圆角为 6px，具有悬停效果和选中状态的视觉反馈。
     - **交互优化**: 所有卡片区域均支持全区域点击，提升用户体验。
+    - **无边框窗口**: 采用透明标题栏设计 (`.windowStyle(.hiddenTitleBar)`)，移除了系统默认的窗口标题栏，使自定义的深色背景能延伸至整个窗口，提供更具沉浸感的现代视觉体验。
 
 - **主窗口布局**: 采用经典的 `NavigationSplitView` 实现三栏式布局：
     - **左栏 (Sidebar)**: 显示虚拟 Key 列表，采用卡片式设计。每个 API Key 卡片显示名称/别名和消费金额，当前选中的 Key 有蓝色高亮边框和背景。在侧边栏顶部显示"API Keys"标题和计数，底部提供设置按钮。整个卡片区域可点击选择。
@@ -77,6 +78,7 @@
     - **自定义样式**: 实现了 `LinearCardStyle`、`LinearButtonStyle`、`LinearTextFieldStyle` 等自定义 ViewModifier。
     - **组件复用**: `StatusBadge`、`KeyRowView` 等可复用组件，确保界面一致性。
     - **交互处理**: 使用 `.onTapGesture` 替代 Button 包装，实现全区域可点击的卡片交互。
+- **自定义窗口样式**: 在 `LiteLogApp.swift` 中，通过对主 `WindowGroup` 应用 `.windowStyle(.hiddenTitleBar)` 修饰符，实现了无边框和透明标题栏的窗口效果，同时保留了标准的窗口控制按钮（红绿灯）和工具栏项。
 - **状态管理**: 
     - 使用一个 `AppEnvironment` 的 `ObservableObject` 在根视图注入，用于管理全局状态，如 `APIService` 实例。
     - `ContentViewModel` 和 `SettingsViewModel` 分别管理主视图和设置视图的状态和业务逻辑。

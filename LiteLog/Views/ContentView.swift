@@ -28,7 +28,9 @@ struct ContentView: View {
         }
         .navigationTitle("LiteLog")
         .toolbar {
-            ToolbarItem {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Spacer()
+
                 Button(action: { viewModel.manualRefresh() }) {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }

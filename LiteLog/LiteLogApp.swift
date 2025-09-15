@@ -26,6 +26,7 @@ struct LiteLogApp: App {
                     NSApplication.shared.activate(ignoringOtherApps: true)
                 }
         }
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About LiteLog") {
