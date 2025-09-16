@@ -6,6 +6,10 @@ struct LiteLogApp: App {
     @StateObject private var appEnvironment = AppEnvironment()
     @Environment(\.openWindow) var openWindow
 
+    // 使用 @AppStorage 存储主窗口的尺寸
+    @AppStorage("mainWindowWidth") var mainWindowWidth: Double = 1200
+    @AppStorage("mainWindowHeight") var mainWindowHeight: Double = 800
+
     init() {
         // 确保应用能够成为前台应用并激活菜单栏
         DispatchQueue.main.async {
@@ -25,8 +29,10 @@ struct LiteLogApp: App {
                     // 窗口出现时再次激活应用
                     NSApplication.shared.activate(ignoringOtherApps: true)
                 }
+                .observeWindowSize(width: $mainWindowWidth, height: $mainWindowHeight) // 观察并保存窗口尺寸
         }
         .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: mainWindowWidth, height: mainWindowHeight) // 应用存储的尺寸
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About LiteLog") {
