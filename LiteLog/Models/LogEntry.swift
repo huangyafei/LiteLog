@@ -17,6 +17,8 @@ struct LogEntry: Codable, Identifiable, Hashable {
     let user: String?
     let metadata: [String: AnyCodable]?
     let cacheHit: String?
+    let customLlmProvider: String?
+    let apiBase: String?
 
     // 将原始 JSON 数据存储为 Data
     let requestPayload: Data?
@@ -32,6 +34,8 @@ struct LogEntry: Codable, Identifiable, Hashable {
         case promptTokens = "prompt_tokens"
         case completionTokens = "completion_tokens"
         case cacheHit = "cache_hit"
+        case customLlmProvider = "custom_llm_provider"
+        case apiBase = "api_base"
         case requestPayload = "proxy_server_request"
         case responsePayload = "response"
     }
@@ -51,6 +55,8 @@ struct LogEntry: Codable, Identifiable, Hashable {
         user = try container.decodeIfPresent(String.self, forKey: .user)
         metadata = try container.decodeIfPresent([String: AnyCodable].self, forKey: .metadata)
         cacheHit = try container.decodeIfPresent(String.self, forKey: .cacheHit)
+        customLlmProvider = try container.decodeIfPresent(String.self, forKey: .customLlmProvider)
+        apiBase = try container.decodeIfPresent(String.self, forKey: .apiBase)
 
         // Encode the JSON objects for request and response back to Data
         if let requestJSON = try? container.decodeIfPresent(AnyCodable.self, forKey: .requestPayload) {

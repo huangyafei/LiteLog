@@ -45,7 +45,7 @@
 - **主窗口布局**: 采用经典的 `NavigationSplitView` 实现三栏式布局，**列宽不持久化**：
     - **左栏 (Sidebar)**: 显示虚拟 Key 列表，采用卡片式设计。每个 API Key 卡片显示名称/别名和消费金额，当前选中的 Key 有蓝色高亮边框和背景。在侧边栏顶部显示"API Keys"标题和计数，底部提供设置按钮。整个卡片区域可点击选择。
     - **中栏 (Content List)**: 显示所选 Key 的日志条目列表，采用现代化卡片设计。每条日志卡片显示状态徽章、模型名称、时间戳、耗时、消费和 Token 数量。卡片具有悬停效果，整个区域可点击。顶部显示"Logs"标题和日志计数。该栏的最小宽度为 450px，理想宽度为 500px。
-    - **右栏 (Detail View)**: 显示所选日志的详细信息，采用卡片分组布局。包含日志概览、详细信息和载荷数据三个卡片区域。JSON 载荷经过格式化后以纯文本形式显示，并提供拷贝功能。当未选中日志时显示居中的提示文本。
+    - **右栏 (Detail View)**: 显示所选日志的详细信息，采用卡片分组布局。包含日志概览、详细信息和载荷数据三个卡片区域。其中详细信息区域会展示 Provider 和 API Base（仅域名）等。JSON 载荷经过格式化后以纯文本形式显示，并提供拷贝功能。当未选中日志时显示居中的提示文本。
 
 - **设置界面**:
     - 采用现代化表单设计，使用自定义的 `LinearTextFieldStyle` 样式。
@@ -127,6 +127,8 @@ struct LogEntry: Codable, Identifiable, Hashable {
     let user: String?
     let metadata: [String: AnyCodable]?
     let cacheHit: String?
+    let customLlmProvider: String?
+    let apiBase: String?
     let requestPayload: Data?
     let responsePayload: Data?
 
@@ -140,6 +142,8 @@ struct LogEntry: Codable, Identifiable, Hashable {
         case promptTokens = "prompt_tokens"
         case completionTokens = "completion_tokens"
         case cacheHit = "cache_hit"
+        case customLlmProvider = "custom_llm_provider"
+        case apiBase = "api_base"
         case requestPayload = "proxy_server_request"
         case responsePayload = "response" // 已修正为正确的 "response"
     }

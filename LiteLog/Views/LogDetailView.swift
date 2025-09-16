@@ -112,6 +112,15 @@ struct LogDetailView: View {
                 if let cacheHit = log.cacheHit {
                     DetailRow(label: "Cache Hit", value: cacheHit)
                 }
+                
+                if let provider = log.customLlmProvider, !provider.isEmpty {
+                    DetailRow(label: "Provider", value: provider)
+                }
+
+                if let apiBase = log.apiBase, let url = URL(string: apiBase), let scheme = url.scheme, let host = url.host {
+                    let truncatedApiBase = "\(scheme)://\(host)"
+                    DetailRow(label: "API Base", value: truncatedApiBase)
+                }
             }
         }
         .padding(DesignSystem.Spacing.xl)
