@@ -212,3 +212,16 @@ struct StatusBadge: View {
         .cornerRadius(DesignSystem.CornerRadius.sm)
     }
 }
+
+extension Color {
+    static var backgroundGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(red: 5/255, green: 5/255, blue: 10/255), // rgb(5, 5, 10)
+                Color(red: 20/255, green: 23/255, blue: 33/255) // rgb(20, 23, 33)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+}
