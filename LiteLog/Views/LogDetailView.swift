@@ -222,16 +222,96 @@ struct LogDetailView: View {
     }
 }
 
+// MARK: - JSON Cache Manager
+private class JsonCacheManager {
+    static let shared = JsonCacheManager()
+    private var cache: [String: String] = [:]
+    private let queue = DispatchQueue(label: "json-cache", qos: .utility, attributes: .concurrent)
+
+    private init() {}
+
+    func getCachedJson(for data: Data) -> String? {
+        let key = data.hashValue.description
+        return queue.sync {
+            return cache[key]
+        }
+    }
+
+    func setCachedJson(_ json: String, for data: Data) {
+        let key = data.hashValue.description
+        queue.async(flags: .barrier) {
+            self.cache[key] = json
+
+            // 限制缓存大小，超过 50 个条目时清理
+            if self.cache.count > 50 {
+                let keysToRemove = Array(self.cache.keys.prefix(10))
+                for keyToRemove in keysToRemove {
+                    self.cache.removeValue(forKey: keyToRemove)
+                }
+            }
+        }
+    }
+}
+
 private struct JsonPayloadView: View {
     let data: Data?
 
+    @State private var formattedJson: String = ""
+    @State private var isLoading: Bool = true
+    @State private var isTruncated: Bool = false
+    @State private var showFullContent: Bool = false
+    @State private var loadingTask: Task<Void, Never>?
+
+    private let maxDisplayLength = 50000 // 约 50KB 的字符限制
+    private let maxDataSize = 1024 * 1024 // 1MB 限制
+
     var body: some View {
         ScrollView {
-            Text(prettyPrintedJsonString())
-                .font(DesignSystem.Typography.mono)
-                .padding(DesignSystem.Spacing.lg)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .foregroundColor(DesignSystem.Colors.textPrimary)
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                if isLoading {
+                    HStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: DesignSystem.Colors.primary))
+                            .scaleEffect(0.8)
+                        Text("Formatting JSON...")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(DesignSystem.Spacing.xl)
+                } else {
+                    if isTruncated && !showFullContent {
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                            HStack {
+                                Image(systemName: "info.circle")
+                                    .foregroundColor(DesignSystem.Colors.warning)
+                                Text("Large payload detected. Showing first \(formatNumber(maxDisplayLength)) characters.")
+                                    .font(DesignSystem.Typography.caption)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                                Spacer()
+                                Button("Show Full") {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        showFullContent = true
+                                    }
+                                }
+                                .buttonStyle(LinearButtonStyle(variant: .ghost))
+                                .font(DesignSystem.Typography.caption)
+                            }
+                            .padding(.horizontal, DesignSystem.Spacing.md)
+                            .padding(.vertical, DesignSystem.Spacing.sm)
+                            .background(DesignSystem.Colors.warning.opacity(0.1))
+                            .cornerRadius(DesignSystem.CornerRadius.sm)
+                        }
+                    }
+
+                    Text(displayText)
+                        .font(DesignSystem.Typography.mono)
+                        .padding(DesignSystem.Spacing.lg)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                        .textSelection(.enabled)
+                }
+            }
         }
         .background(DesignSystem.Colors.backgroundSecondary)
         .cornerRadius(DesignSystem.CornerRadius.lg)
@@ -240,15 +320,117 @@ private struct JsonPayloadView: View {
                 .stroke(DesignSystem.Colors.border, lineWidth: 1)
         )
         .frame(minHeight: 200)
+        .onAppear {
+            loadJsonAsync()
+        }
+        .onChange(of: data) { _ in
+            // 取消之前的任务
+            loadingTask?.cancel()
+
+            // 重置状态并重新加载
+            isLoading = true
+            formattedJson = ""
+            isTruncated = false
+            showFullContent = false
+            loadJsonAsync()
+        }
+        .onDisappear {
+            // 视图消失时取消加载任务
+            loadingTask?.cancel()
+        }
     }
 
-    private func prettyPrintedJsonString() -> String {
-        guard let data = data else { return "No data" }
+    private var displayText: String {
+        if showFullContent || !isTruncated {
+            return formattedJson
+        } else {
+            return String(formattedJson.prefix(maxDisplayLength)) + "\n\n... (truncated)"
+        }
+    }
+
+    private func loadJsonAsync() {
+        guard let data = data else {
+            DispatchQueue.main.async {
+                self.formattedJson = "No data"
+                self.isLoading = false
+            }
+            return
+        }
+
+        // 检查数据大小
+        if data.count > maxDataSize {
+            DispatchQueue.main.async {
+                self.formattedJson = "Payload too large (\(self.formatBytes(data.count))). Please use the copy function to view the full content."
+                self.isLoading = false
+            }
+            return
+        }
+
+        // 首先检查缓存
+        if let cachedJson = JsonCacheManager.shared.getCachedJson(for: data) {
+            DispatchQueue.main.async {
+                self.formattedJson = cachedJson
+                self.isTruncated = cachedJson.count > self.maxDisplayLength
+                self.isLoading = false
+            }
+            return
+        }
+
+        // 创建异步任务
+        loadingTask = Task { @MainActor in
+            do {
+                let result = try await formatJsonDataAsync(data)
+
+                // 检查任务是否被取消
+                if !Task.isCancelled {
+                    self.formattedJson = result
+                    self.isTruncated = result.count > self.maxDisplayLength
+                    self.isLoading = false
+
+                    // 缓存结果
+                    JsonCacheManager.shared.setCachedJson(result, for: data)
+                }
+            } catch {
+                if !Task.isCancelled {
+                    self.formattedJson = "Failed to format JSON: \(error.localizedDescription)"
+                    self.isLoading = false
+                }
+            }
+        }
+    }
+
+    private func formatJsonDataAsync(_ data: Data) async throws -> String {
+        return try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let result = formatJsonData(data)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func formatJsonData(_ data: Data) -> String {
         guard let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []),
               let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted) else {
             return String(data: data, encoding: .utf8) ?? "Failed to decode as UTF-8 string"
         }
         return String(data: prettyData, encoding: .utf8) ?? ""
+    }
+
+    private func formatNumber(_ number: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
+    }
+
+    private func formatBytes(_ bytes: Int) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytes))
     }
 }
 
