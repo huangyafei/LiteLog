@@ -35,6 +35,7 @@ Inspired by [Linear](https://linear.app), LiteLog is dedicated to bringing a mod
     - Remembers the main window size, eliminating the need for repeated adjustments.
 - **Smart Caching**: Caches loaded logs when switching between API keys to avoid unnecessary network requests and improve browsing speed.
 - **Simple Configuration**: Easily configure connection parameters in a separate settings window. The main interface refreshes automatically after saving, no restart required.
+- **Configurable Time Range & Pagination**: Set Lookback (hours) and Page Size. Bottom floating "Load Older" incrementally loads older logs (highlighted at bottom; not highlighted if content < one screen). Top floating "Back to Latest" scrolls to the latest without refreshing.
 
 ### 🛠️ Tech Stack
 
@@ -63,7 +64,8 @@ Inspired by [Linear](https://linear.app), LiteLog is dedicated to bringing a mod
 1. After the app launches, open the settings window via the menu bar `LiteLog -> Settings...` (or shortcut `⌘ + ,`).
 2. Enter the **Base URL** of your LiteLLM instance (e.g., `http://localhost:4000`).
 3. Enter your LiteLLM **Admin API Key**.
-4. Click "Save". The app will automatically refresh the data with the new configuration.
+4. Optionally adjust log options: **Lookback (hours)** and **Page Size** used for each fetch and when loading older logs.
+5. Click "Save". The app will automatically refresh the data with the new configuration.
 
 ### 🤝 Contributing
 

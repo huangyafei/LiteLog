@@ -11,19 +11,27 @@
 ### 2. 核心功能 (V1.0)
 
 - **设置配置**: 用户可以在应用的设置界面中配置 LiteLLM 实例的 **Base URL** 和 **Admin API Key**。
+    - 新增日志选项：可配置「回溯时长（小时）」与「分页条数（Page Size）」，用于控制查询窗口与每次加载数量（默认 24 小时 / 50 条）。
 - **凭证存储**: Admin API Key 和 Base URL 都使用 `UserDefaults` 进行存储。移除了原定用于增强安全性的 `Keychain` 方案，以简化实现。
 - **主窗口大小持久化**: 应用会记住用户上次调整的主窗口大小，并在下次启动时恢复。
 - **虚拟 Key 列表**: 
     - 应用启动后，自动使用已配置的 Base URL 和 Admin Key 从 `/key/list` 接口获取所有虚拟 API Key。
     - 在左侧边栏中展示虚拟 Key 列表。每项会显示其别名 (`key_alias`)，如果别名不存在，则会显示其 `key_name` 作为备用。
 - **日志缓存**: 当切换 API Key 时，应用会缓存已加载的日志，避免重复请求。只有在手动刷新或应用重置时才会重新从 API 获取日志。
+- **日志分页**:
+    - 中栏底部提供「Load Older」悬浮按钮，用于加载更早一段时间窗口内的日志（窗口跨度等于回溯时长）。
+    - 分页为增量加载，不会打断当前滚动位置；加载中有内联小菊花提示。
+    - 当内容不足一屏时，不高亮「Load Older」。
+    - 顶部提供「Back to Latest」悬浮按钮，仅滚动回列表顶部，不触发刷新或重置时间窗口。
 - **UI 优化 (V1.0 新增)**:
     - **现代化界面**: 采用 Linear 风格的深色主题设计，提升视觉体验。
     - **交互改进**: 所有列表项卡片支持全区域点击，不再局限于文本区域。
     - **视觉反馈**: 添加悬停效果、选中状态高亮、按钮动画等交互细节。
     - **组件统一**: 通过设计系统确保全应用的视觉一致性。
+    - **悬浮控件**: 顶部/底部悬浮按钮（Back to Latest / Load Older），根据滚动位置自动显示与高亮。
 
 - **状态持久化**: 应用通过 `UserDefaults` 记住用户上次选择的虚拟 Key，在下次启动时自动选中并加载其日志。
+    - 额外持久化：回溯时长（`LiteLogLookbackHours`）与分页条数（`LiteLogPageSize`）。
 - **基础交互**:
     - 提供手动刷新按钮，用于重新加载 Key 列表和日志列表。
     - 在数据加载期间显示加载指示器 (Spinner)。
@@ -45,12 +53,14 @@
 - **主窗口布局**: 采用经典的 `NavigationSplitView` 实现三栏式布局，**列宽不持久化**：
     - **左栏 (Sidebar)**: 显示虚拟 Key 列表，采用卡片式设计。每个 API Key 卡片显示名称/别名和消费金额，当前选中的 Key 有蓝色高亮边框和背景。在侧边栏顶部显示"API Keys"标题和计数，底部提供设置按钮。整个卡片区域可点击选择。
     - **中栏 (Content List)**: 显示所选 Key 的日志条目列表，采用现代化卡片设计。每条日志卡片显示状态徽章、模型名称、时间戳、耗时、消费和 Token 数量。卡片具有悬停效果，整个区域可点击。顶部显示"Logs"标题和日志计数。该栏的最小宽度为 450px，理想宽度为 500px。
+        - 底部悬浮「Load Older」按钮：到达底部时高亮提示，内容不足一屏不高亮；点击后增量加载更早时间段日志。
+        - 顶部悬浮「Back to Latest」按钮：离开顶部时显示，回到顶部自动隐藏；点击仅滚动，不触发网络刷新。
     - **右栏 (Detail View)**: 显示所选日志的详细信息，采用卡片分组布局。包含日志概览、详细信息和载荷数据三个卡片区域。其中详细信息区域会展示 Provider 和 API Base（仅域名）等。JSON 载荷经过格式化后以纯文本形式显示，并提供拷贝功能。当未选中日志时显示居中的提示文本。
 
 - **设置界面**:
     - 采用现代化表单设计，使用自定义的 `LinearTextFieldStyle` 样式。
     - 通过菜单栏 (`LiteLog -> Settings...`) 或快捷键 (`⌘,`) 打开独立窗口。
-    - 提供"Base URL"和"Admin API Key"输入框，使用深色主题和蓝色焦点边框。
+    - 提供"Base URL"、"Admin API Key"、"Lookback（小时）"、"Page Size" 输入/控制，使用深色主题和蓝色焦点边框（Lookback 合理范围：1–168，默认 24；Page Size 合理范围：10–500，默认 50）。
     - 在 Admin API Key 下方显示隐私保护说明。
     - 窗口尺寸固定为合理范围，保存后自动刷新主界面数据。
 
@@ -86,7 +96,12 @@
 - **状态管理**: 
     - 使用一个 `AppEnvironment` 的 `ObservableObject` 在根视图注入，用于管理全局状态，如 `APIService` 实例。
     - `ContentViewModel` 和 `SettingsViewModel` 分别管理主视图和设置视图的状态和业务逻辑。
+        - ContentViewModel：读取并应用 Lookback/Page Size；为每个 Key 维护时间窗口 `[startDate, endDate]`；`loadOlder()` 将窗口向过去滑动一个 Lookback 跨度并增量追加（含去重）；使用 `isPaginating` 避免全屏 Loading；`manualRefresh()` 清空缓存与窗口后重拉。
     - 使用 `NotificationCenter` 在设置保存后通知 `AppEnvironment` 重新加载 `APIService`。
+
+- **数据与网络层**:
+    - `APIService.fetchLogs` 更新：接受 `startDate`、`endDate`、`pageSize` 参数（时间格式 `yyyy-MM-dd HH:mm:ss`），外部可控时间范围与分页大小。
+    - 列表顶部/底部的滚动位置检测采用“可见哨兵”方案：在顶部/底部放置 1pt 透明视图，通过 `onAppear/onDisappear` 更新 `isAtTop/isAtBottom`，避免坐标空间/通知在 macOS 上的不一致问题。
 
 ### 5. 数据模型 (Swift)
 
