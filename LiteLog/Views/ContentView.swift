@@ -6,6 +6,9 @@ struct ContentView: View {
     @Environment(\.openWindow) var openWindow
     
     @State private var selectedLogID: LogEntry.ID?
+    @State private var isAtTop: Bool = true
+    @State private var isAtBottom: Bool = false
+    
 
     var body: some View {
         ZStack {
@@ -186,19 +189,86 @@ struct ContentView: View {
                         Spacer()
                     }
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: DesignSystem.Spacing.xs) {
-                            ForEach(viewModel.logEntries) { log in
-                                LogEntryRowView(
-                                    log: log,
-                                    isSelected: selectedLogID == log.id
-                                ) {
-                                    selectedLogID = log.id
+                    ScrollViewReader { proxy in
+                        ZStack {
+                            ScrollView {
+                                LazyVStack(spacing: DesignSystem.Spacing.xs) {
+                                    // Top anchor (sentinel)
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .id("top")
+                                        .onAppear { isAtTop = true }
+                                        .onDisappear { isAtTop = false }
+
+                                    ForEach(viewModel.logEntries) { log in
+                                        LogEntryRowView(
+                                            log: log,
+                                            isSelected: selectedLogID == log.id
+                                        ) {
+                                            selectedLogID = log.id
+                                        }
+                                    }
+
+                                    // Bottom anchor (sentinel)
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .id("bottom")
+                                        .onAppear { isAtBottom = true }
+                                        .onDisappear { isAtBottom = false }
                                 }
+                                .padding(.horizontal, DesignSystem.Spacing.sm)
+                                .padding(.vertical, DesignSystem.Spacing.sm)
+                            }
+
+                            // Floating buttons (top: Back to Latest, bottom: Load Older)
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            proxy.scrollTo("top", anchor: .top)
+                                        }
+                                    }) {
+                                        HStack(spacing: DesignSystem.Spacing.xs) {
+                                            Image(systemName: "arrow.up.to.line")
+                                                .font(.system(size: 12))
+                                            Text("Back to Latest")
+                                                .font(DesignSystem.Typography.caption)
+                                        }
+                                    }
+                                    .buttonStyle(LinearButtonStyle(variant: .secondary))
+                                    .opacity(isAtTop ? 0 : 1)
+                                    .allowsHitTesting(!isAtTop)
+                                }
+                                .padding(.horizontal, DesignSystem.Spacing.md)
+                                .padding(.top, DesignSystem.Spacing.md)
+
+                                Spacer()
+
+                                HStack {
+                                    Spacer()
+                                    Button(action: { viewModel.loadOlder() }) {
+                                        HStack(spacing: DesignSystem.Spacing.xs) {
+                                            if viewModel.isPaginating {
+                                                ProgressView()
+                                                    .scaleEffect(0.6)
+                                            } else {
+                                                Image(systemName: "chevron.down")
+                                                    .font(.system(size: 12))
+                                            }
+                                            Text("Load Older")
+                                                .font(DesignSystem.Typography.caption)
+                                        }
+                                    }
+                                    .buttonStyle(LinearButtonStyle(variant: (isAtBottom && !(isAtTop && isAtBottom)) ? .primary : .secondary))
+                                    .disabled(viewModel.isLoadingLogs || viewModel.isPaginating)
+                                }
+                                .padding(.horizontal, DesignSystem.Spacing.md)
+                                .padding(.bottom, DesignSystem.Spacing.md)
+
+                                
                             }
                         }
-                        .padding(.horizontal, DesignSystem.Spacing.sm)
-                        .padding(.vertical, DesignSystem.Spacing.sm)
                     }
                 }
             }
@@ -239,7 +309,10 @@ struct ContentView: View {
             alignment: .top
         )
     }
+
 }
+
+// (no preference keys required for sentinel-based detection)
 
 /*
 #Preview {

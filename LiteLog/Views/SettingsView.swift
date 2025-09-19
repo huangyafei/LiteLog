@@ -66,6 +66,37 @@ struct SettingsView: View {
                             }
                             .padding(.top, DesignSystem.Spacing.xs)
                         }
+
+                        // Log options
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                            Text("Log Options")
+                                .font(DesignSystem.Typography.bodyMedium)
+                                .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                            HStack(spacing: DesignSystem.Spacing.md) {
+                                Text("Lookback")
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                                    .frame(width: 120, alignment: .leading)
+                                Stepper(value: $viewModel.lookbackHours, in: 1...168, step: 1) {
+                                    Text("\(viewModel.lookbackHours) h")
+                                        .font(DesignSystem.Typography.body)
+                                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                                }
+                            }
+
+                            HStack(spacing: DesignSystem.Spacing.md) {
+                                Text("Page Size")
+                                    .font(DesignSystem.Typography.body)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                                    .frame(width: 120, alignment: .leading)
+                                Stepper(value: $viewModel.pageSize, in: 10...500, step: 10) {
+                                    Text("\(viewModel.pageSize)")
+                                        .font(DesignSystem.Typography.body)
+                                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                                }
+                            }
+                        }
                     }
                     .padding(.horizontal, DesignSystem.Spacing.xxl)
                     .padding(.top, DesignSystem.Spacing.xl)
@@ -119,4 +150,3 @@ struct SettingsView: View {
     SettingsView()
 }
 */
-

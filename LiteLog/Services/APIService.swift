@@ -61,33 +61,32 @@ class APIService {
         return keyResponse.keys
     }
     
-    func fetchLogs(for apiKeyToken: String) async throws -> [LogEntry] {
+    // Fetch logs for a specific apiKey within a time window and page size
+    func fetchLogs(for apiKeyToken: String, startDate: Date, endDate: Date, pageSize: Int) async throws -> [LogEntry] {
         guard var urlComponents = URLComponents(string: baseURL) else {
             throw APIError.invalidURL
         }
         urlComponents.path = "/spend/logs/ui"
-        
-        // Default to last 24 hours as per documentation
-        let endDate = Date()
-        let startDate = endDate.addingTimeInterval(-24 * 60 * 60)
+
+        // Format per LiteLLM expected format
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        
+
         urlComponents.queryItems = [
             URLQueryItem(name: "api_key", value: apiKeyToken),
             URLQueryItem(name: "start_date", value: formatter.string(from: startDate)),
             URLQueryItem(name: "end_date", value: formatter.string(from: endDate)),
-            URLQueryItem(name: "page_size", value: "50") // Per documentation suggestion
+            URLQueryItem(name: "page_size", value: String(pageSize))
         ]
-        
+
         guard let url = urlComponents.url else {
             throw APIError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(adminApiKey)", forHTTPHeaderField: "Authorization")
-        
+
         let (data, response) = try await session.data(for: request)
 
         #if DEBUG
@@ -99,15 +98,15 @@ class APIService {
         }
         print("--- End API Response ---")
         #endif
-        
+
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw APIError.requestFailed(statusCode: (response as? HTTPURLResponse)?.statusCode ?? -1)
         }
-        
+
         guard !data.isEmpty else {
             return []
         }
-        
+
         let decoder = JSONDecoder()
         let logResponse = try decoder.decode(LogResponse.self, from: data)
         return logResponse.data
