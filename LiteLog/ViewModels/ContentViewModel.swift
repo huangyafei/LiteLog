@@ -160,12 +160,16 @@ class ContentViewModel: ObservableObject {
     }
     
     func manualRefresh() {
+        resetToLatest()
+    }
+    
+    func refreshKeysAndLogs() {
         if apiService != nil {
             self.logsCache = [:] // Clear cache on manual refresh
             self.windowStartByToken = [:]
             self.windowEndByToken = [:]
             self.isPaginating = false
             fetchKeys()
-        } 
+        }
     }
 }
