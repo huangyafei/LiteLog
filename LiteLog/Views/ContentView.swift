@@ -65,8 +65,9 @@ struct ContentView: View {
                     Button(action: { viewModel.refreshKeysAndLogs() }) {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 14))
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
                     }
-                    .buttonStyle(LinearButtonStyle(variant: .ghost))
+                    .buttonStyle(.plain)
                     .help("Refresh API Key list")
                 }
                 .padding(.horizontal, DesignSystem.Spacing.lg)
