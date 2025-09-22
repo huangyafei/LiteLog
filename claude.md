@@ -33,7 +33,9 @@
 - **状态持久化**: 应用通过 `UserDefaults` 记住用户上次选择的虚拟 Key，在下次启动时自动选中并加载其日志。
     - 额外持久化：回溯时长（`LiteLogLookbackHours`）与分页条数（`LiteLogPageSize`）。
 - **基础交互**:
-    - 提供手动刷新按钮，用于重新加载 Key 列表和日志列表。
+    - 提供两种手动刷新机制：
+        - **刷新日志**: 主工具栏的刷新按钮，仅重新加载当前选中 Key 的日志。
+        - **刷新 API Keys**: 左侧边栏的刷新按钮，用于重新加载整个 Key 列表（此操作也会附带刷新当前 Key 的日志）。
     - 在数据加载期间显示加载指示器 (Spinner)。
     - 在列表为空时显示明确的“暂无数据”或“未找到 API Key”等提示。
 - **设置自动刷新**: 在设置界面保存配置后，主界面会自动刷新数据，无需手动重启应用。
@@ -96,7 +98,7 @@
 - **状态管理**: 
     - 使用一个 `AppEnvironment` 的 `ObservableObject` 在根视图注入，用于管理全局状态，如 `APIService` 实例。
     - `ContentViewModel` 和 `SettingsViewModel` 分别管理主视图和设置视图的状态和业务逻辑。
-        - ContentViewModel：读取并应用 Lookback/Page Size；为每个 Key 维护时间窗口 `[startDate, endDate]`；`loadOlder()` 将窗口向过去滑动一个 Lookback 跨度并增量追加（含去重）；使用 `isPaginating` 避免全屏 Loading；`manualRefresh()` 清空缓存与窗口后重拉。
+        - ContentViewModel：读取并应用 Lookback/Page Size；为每个 Key 维护时间窗口 `[startDate, endDate]`；`loadOlder()` 将窗口向过去滑动一个 Lookback 跨度并增量追加（含去重）；使用 `isPaginating` 避免全屏 Loading；`manualRefresh()` 现在仅重置并重新加载当前选中 Key 的日志；新增 `refreshKeysAndLogs()` 方法，用于清空所有缓存并重新获取 Key 列表。
     - 使用 `NotificationCenter` 在设置保存后通知 `AppEnvironment` 重新加载 `APIService`。
 
 - **数据与网络层**:

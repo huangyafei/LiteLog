@@ -61,6 +61,13 @@ struct ContentView: View {
                         .foregroundColor(DesignSystem.Colors.textPrimary)
                     
                     Spacer()
+                    
+                    Button(action: { viewModel.refreshKeysAndLogs() }) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14))
+                    }
+                    .buttonStyle(LinearButtonStyle(variant: .ghost))
+                    .help("Refresh API Key list")
                 }
                 .padding(.horizontal, DesignSystem.Spacing.lg)
                 .padding(.vertical, DesignSystem.Spacing.md)
