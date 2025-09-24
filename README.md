@@ -37,6 +37,10 @@ Inspired by [Linear](https://linear.app), LiteLog is dedicated to bringing a mod
 - **Simple Configuration**: Easily configure connection parameters in a separate settings window. The main interface refreshes automatically after saving, no restart required.
 - **Configurable Time Range & Pagination**: Set Lookback (hours) and Page Size. Bottom floating "Load Older" incrementally loads older logs (highlighted at bottom; not highlighted if content < one screen). Top floating "Back to Latest" scrolls to the latest without refreshing.
 
+### 🚀 Power-user Experience
+- **Keyboard Navigation**: Navigate the log list using arrow keys (`↑`/`↓`) and select an entry with `Enter`.
+- **Global Hotkey**: Toggle the app window's visibility from anywhere in macOS with a global hotkey (`Cmd+Shift+L`).
+
 ### 🛠️ Tech Stack
 
 - **Language**: Swift
