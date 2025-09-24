@@ -86,6 +86,14 @@
     - **错误状态**: 在主窗口底部显示红色错误提示条。
     - **交互反馈**: 卡片悬停效果、按钮按压动画、选中状态高亮。
 
+- **高级交互**:
+    - **键盘导航**:
+        - **功能**: 用户可以使用 `↑` 和 `↓` 键在中间的日志列表中导航，使用 `Enter` 键选中当前聚焦的日志条目。
+        - **实现**: 在 `ContentViewModel` 中增加了 `focusedLogEntryId` 状态来追踪焦点。`ContentView` 通过 `@FocusState` 和 `.onKeyPress` 修饰符来捕获键盘事件并调用 `ViewModel` 中的导航逻辑。`LogEntryRowView` 根据传入的 `isFocused` 状态显示与鼠标悬停一致的视觉反馈。
+    - **全局热键**:
+        - **功能**: 用户可以通过全局快捷键 `Cmd+Shift+L` 在系统的任何地方快速显示或隐藏应用主窗口。
+        - **实现**: 创建了一个独立的 `GlobalHotkeyMonitor` 服务类，使用 Carbon 框架的 `RegisterEventHotKey` API 注册全局热键。当热键触发时，该服务会发送一个 `toggleMainWindow` 的 `Notification`。`LiteLogApp` 在顶层接收此通知，并调用 `openWindow` 或 `orderOut` 来可靠地显示/隐藏由 `WindowGroup` 管理的窗口，实现了 AppKit 底层事件与 SwiftUI 上层窗口管理的清晰解耦。
+
 ### 4. 架构与关键实现细节
 
 - **项目类型**: 基于 Xcode 项目 (.xcodeproj) 的标准 macOS 应用程序。项目已从原先的 Swift Package Manager (SPM) 结构迁移，以解决原生应用打包和配置的复杂性。

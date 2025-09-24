@@ -17,6 +17,8 @@ class ContentViewModel: ObservableObject {
     @Published var isLoadingKeys = false
     @Published var isLoadingLogs = false
     @Published var isPaginating = false
+    @Published var selectedLogEntryId: String?
+    @Published var focusedLogEntryId: String?
     @Published var errorMessage: String?
 
     private var apiService: APIService?
@@ -171,5 +173,37 @@ class ContentViewModel: ObservableObject {
             self.isPaginating = false
             fetchKeys()
         }
+    }
+    
+    // MARK: - Keyboard Navigation
+    
+    func moveFocus(down: Bool) {
+        guard !logEntries.isEmpty else { return }
+        
+        let currentIndex: Int
+        let startId = focusedLogEntryId ?? selectedLogEntryId
+        if let startId = startId, let index = logEntries.firstIndex(where: { $0.id == startId }) {
+            currentIndex = index
+        } else {
+            // If no focus or selection, start from the top or bottom
+            focusedLogEntryId = down ? logEntries.first?.id : logEntries.last?.id
+            return
+        }
+        
+        let nextIndex = down ? logEntries.index(after: currentIndex) : logEntries.index(before: currentIndex)
+        
+        if nextIndex >= logEntries.startIndex && nextIndex < logEntries.endIndex {
+            focusedLogEntryId = logEntries[nextIndex].id
+        }
+    }
+    
+    func selectFocusedItem() {
+        if let focusedLogEntryId = focusedLogEntryId {
+            selectedLogEntryId = focusedLogEntryId
+        }
+    }
+    
+    func clearFocus() {
+        focusedLogEntryId = nil
     }
 }

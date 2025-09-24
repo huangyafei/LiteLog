@@ -5,6 +5,7 @@ import SwiftUI
 struct LiteLogApp: App {
     @StateObject private var appEnvironment = AppEnvironment()
     @Environment(\.openWindow) var openWindow
+    private let hotkeyMonitor = GlobalHotkeyMonitor()
 
     // 使用 @AppStorage 存储主窗口的尺寸
     @AppStorage("mainWindowWidth") var mainWindowWidth: Double = 1200
@@ -16,6 +17,7 @@ struct LiteLogApp: App {
             NSApplication.shared.setActivationPolicy(.regular)
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
+        hotkeyMonitor.start()
     }
 
     var body: some Scene {
@@ -30,6 +32,9 @@ struct LiteLogApp: App {
                     NSApplication.shared.activate(ignoringOtherApps: true)
                 }
                 .observeWindowSize(width: $mainWindowWidth, height: $mainWindowHeight) // 观察并保存窗口尺寸
+                .onReceive(NotificationCenter.default.publisher(for: .toggleMainWindow)) { _ in
+                    toggleMainWindow()
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: mainWindowWidth, height: mainWindowHeight) // 应用存储的尺寸
@@ -72,5 +77,16 @@ struct LiteLogApp: App {
         }
         .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
+    }
+    
+    private func toggleMainWindow() {
+        // Find the main window
+        if let window = NSApp.windows.first(where: { $0.canBecomeMain && $0.isVisible }) {
+            // If it's visible and key, hide it.
+            window.orderOut(nil)
+        } else {
+            // Otherwise, use the SwiftUI way to open the window.
+            openWindow(id: "main")
+        }
     }
 }

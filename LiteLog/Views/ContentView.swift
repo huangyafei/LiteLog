@@ -5,9 +5,9 @@ struct ContentView: View {
     @EnvironmentObject private var appEnvironment: AppEnvironment
     @Environment(\.openWindow) var openWindow
     
-    @State private var selectedLogID: LogEntry.ID?
     @State private var isAtTop: Bool = true
     @State private var isAtBottom: Bool = false
+    @FocusState private var isLogListFocused: Bool
     
 
     var body: some View {
@@ -44,6 +44,22 @@ struct ContentView: View {
         
         .onReceive(appEnvironment.$apiService) { newAPIService in
             viewModel.setAPIService(newAPIService)
+        }
+    }
+    
+    private func handleKeyPress(press: KeyPress) -> KeyPress.Result {
+        switch press.key {
+        case .upArrow:
+            viewModel.moveFocus(down: false)
+            return .handled
+        case .downArrow:
+            viewModel.moveFocus(down: true)
+            return .handled
+        case .return:
+            viewModel.selectFocusedItem()
+            return .handled
+        default:
+            return .ignored
         }
     }
 
@@ -145,7 +161,6 @@ struct ContentView: View {
         .navigationSplitViewColumnWidth(min: 240, ideal: 280)
     }
 
-    @ViewBuilder
     private var logList: some View {
         ZStack {
             DesignSystem.Colors.backgroundTertiary
@@ -211,9 +226,11 @@ struct ContentView: View {
                                     ForEach(viewModel.logEntries) { log in
                                         LogEntryRowView(
                                             log: log,
-                                            isSelected: selectedLogID == log.id
+                                            isSelected: viewModel.selectedLogEntryId == log.id,
+                                            isFocused: viewModel.focusedLogEntryId == log.id
                                         ) {
-                                            selectedLogID = log.id
+                                            viewModel.selectedLogEntryId = log.id
+                                            viewModel.clearFocus()
                                         }
                                     }
 
@@ -280,12 +297,15 @@ struct ContentView: View {
                     }
                 }
             }
-        }
-                .navigationSplitViewColumnWidth(min: 450, ideal: 500)
-    }
+                }
+                        .focusable()
+                        .focused($isLogListFocused)
+                        .focusEffectDisabled()
+                        .onAppear { isLogListFocused = true }                .onKeyPress(action: handleKeyPress)
+                .navigationSplitViewColumnWidth(min: 450, ideal: 500)    }
     
     private var selectedLog: LogEntry? {
-        guard let selectedLogID = selectedLogID else { return nil }
+        guard let selectedLogID = viewModel.selectedLogEntryId else { return nil }
         return viewModel.logEntries.first { $0.id == selectedLogID }
     }
     

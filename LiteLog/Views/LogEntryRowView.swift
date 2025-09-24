@@ -4,6 +4,7 @@ import SwiftUI
 struct LogEntryRowView: View {
     let log: LogEntry
     let isSelected: Bool
+    let isFocused: Bool
     let onSelect: () -> Void
     
     @State private var isHovered = false
@@ -67,7 +68,7 @@ struct LogEntryRowView: View {
             Group {
                 if isSelected {
                     DesignSystem.Colors.primary.opacity(0.08)
-                } else if isHovered {
+                } else if isHovered || isFocused {
                     DesignSystem.Colors.surfaceHover
                 } else {
                     DesignSystem.Colors.surface
