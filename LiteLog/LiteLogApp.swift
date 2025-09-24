@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct LiteLogApp: App {
     @StateObject private var appEnvironment = AppEnvironment()
+    @StateObject private var contentViewModel: ContentViewModel
     @Environment(\.openWindow) var openWindow
     private let hotkeyMonitor = GlobalHotkeyMonitor()
 
@@ -12,6 +13,10 @@ struct LiteLogApp: App {
     @AppStorage("mainWindowHeight") var mainWindowHeight: Double = 800
 
     init() {
+        let env = AppEnvironment()
+        _appEnvironment = StateObject(wrappedValue: env)
+        _contentViewModel = StateObject(wrappedValue: ContentViewModel(appEnvironment: env))
+
         // 确保应用能够成为前台应用并激活菜单栏
         DispatchQueue.main.async {
             NSApplication.shared.setActivationPolicy(.regular)
@@ -22,14 +27,10 @@ struct LiteLogApp: App {
 
     var body: some Scene {
         WindowGroup(id: "main") {
-            ContentView()
+            ContentView(viewModel: contentViewModel)
                 .environmentObject(appEnvironment)
                 .onReceive(NotificationCenter.default.publisher(for: .settingsDidChange)) { _ in
                     appEnvironment.loadApiService()
-                }
-                .onAppear {
-                    // 窗口出现时再次激活应用
-                    NSApplication.shared.activate(ignoringOtherApps: true)
                 }
                 .observeWindowSize(width: $mainWindowWidth, height: $mainWindowHeight) // 观察并保存窗口尺寸
                 .onReceive(NotificationCenter.default.publisher(for: .toggleMainWindow)) { _ in
@@ -85,7 +86,9 @@ struct LiteLogApp: App {
             // If it's visible and key, hide it.
             window.orderOut(nil)
         } else {
-            // Otherwise, use the SwiftUI way to open the window.
+            // If the window is not visible, first activate the app to bring it to the front.
+            NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+            // Then, use the SwiftUI way to open the window.
             openWindow(id: "main")
         }
     }
