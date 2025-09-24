@@ -108,6 +108,7 @@
     - `ContentViewModel` 和 `SettingsViewModel` 分别管理主视图和设置视图的状态和业务逻辑。
         - ContentViewModel：读取并应用 Lookback/Page Size；为每个 Key 维护时间窗口 `[startDate, endDate]`；`loadOlder()` 将窗口向过去滑动一个 Lookback 跨度并增量追加（含去重）；使用 `isPaginating` 避免全屏 Loading；`manualRefresh()` 现在仅重置并重新加载当前选中 Key 的日志；新增 `refreshKeysAndLogs()` 方法，用于清空所有缓存并重新获取 Key 列表。
     - 使用 `NotificationCenter` 在设置保存后通知 `AppEnvironment` 重新加载 `APIService`。
+    - **视图渲染策略**: 为了解决因状态提升到 `AppEnvironment` 后，主视图“过度观察”而导致的性能问题，`ContentView` 被拆分为独立的 `SidebarView` 和 `LogListView`。每个子视图仅观察其自身所需的数据（例如 `SidebarView` 只关心 `virtualKeys` 的变化），从而避免了不必要的全局刷新，保证了 UI 的流畅性。这体现了在 SwiftUI 中通过拆分视图层级来实现精准、高效渲染的最佳实践。同时，将 `currentLogEntries` 等派生数据作为 `AppEnvironment` 的计算属性，实现了业务逻辑的归一。
 
 - **数据与网络层**:
     - `APIService.fetchLogs` 更新：接受 `startDate`、`endDate`、`pageSize` 参数（时间格式 `yyyy-MM-dd HH:mm:ss`），外部可控时间范围与分页大小。
