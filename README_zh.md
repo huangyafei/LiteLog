@@ -26,8 +26,10 @@ LiteLog 的设计深受 [Linear](https://linear.app) 的启发，致力于在开
 - **API Key 管理**: 自动从 LiteLLM 实例获取并展示所有虚拟 API Key，支持按别名或名称显示。
 - **日志审查**:
     - 清晰地展示每个 Key 对应的日志列表，包含状态、模型、耗时、费用等关键信息。
-    - 点击单条日志可查看请求和响应的完整载荷 (Payload)。
-    - 提供一键复制 JSON 载荷功能。
+    - **增强的载荷视图**: 点击单条日志可查看请求和响应的完整载荷 (Payload)，并提供全新的「Formatted」（格式化）和「JSON」视图。
+        - **「JSON」视图**: 呈现美观的 JSON 格式数据，并提供一键复制功能。
+        - **「Formatted」视图 (阶段一)**: 以聊天气泡形式显示从载荷中提取的聊天消息，按角色（System, User, Assistant）分组，每条消息都带有复制到剪贴板功能。**现在，当 Assistant 消息内容为空但包含工具调用时，Formatted 视图会清晰地展示这些工具调用信息。**
+    - **直观的视图切换**: 使用自定义的 Linear 风格选择器，轻松切换「Formatted」和「JSON」载荷视图。
 - **状态持久化**:
     - 自动保存 LiteLLM 的 Base URL 和 Admin API Key。
     - 记住用户上次选择的 API Key，启动时自动加载。
