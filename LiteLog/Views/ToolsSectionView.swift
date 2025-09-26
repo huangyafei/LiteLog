@@ -8,10 +8,10 @@ struct ToolsSectionView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-            Text("Tools")
-                .font(DesignSystem.Typography.titleSmall)
-                .foregroundColor(DesignSystem.Colors.textSecondary)
-                .padding(.horizontal, DesignSystem.Spacing.md)
+            HStack {
+                SectionHeader(title: "Tools")
+                Spacer()
+            }
 
             LazyVStack(spacing: DesignSystem.Spacing.sm) {
                 ForEach(toolDefinitions) { tool in
@@ -41,6 +41,7 @@ struct ToolDefinitionRowView: View {
                             .font(DesignSystem.Typography.body)
                             .foregroundColor(DesignSystem.Colors.textSecondary)
                             .padding(.bottom, DesignSystem.Spacing.sm)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
                     if let parameters = toolDefinition.function.parameters,
@@ -54,10 +55,7 @@ struct ToolDefinitionRowView: View {
                         }
                     }
                 }
-                .padding(DesignSystem.Spacing.md)
-                .frame(maxWidth: .infinity)
-                .background(Color.black.opacity(0.1)) // Inner background
-                .cornerRadius(DesignSystem.CornerRadius.sm, corners: [.bottomLeft, .bottomRight])
+                .padding(.top, DesignSystem.Spacing.sm) // Add spacing between label and content
                 
             } label: {
                 // Label for the collapsible row
@@ -117,36 +115,31 @@ struct ParameterRowView: View {
     let property: PropertyDefinition
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
             Text(name)
                 .font(DesignSystem.Typography.bodyMedium)
                 .foregroundColor(DesignSystem.Colors.textPrimary)
                 .padding(.bottom, DesignSystem.Spacing.xs)
             
-            HStack {
-                Text("Type")
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                    .frame(width: 80, alignment: .leading)
-                Text(property.type)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
-                Spacer()
+            Grid(alignment: .leading, horizontalSpacing: DesignSystem.Spacing.lg, verticalSpacing: DesignSystem.Spacing.sm) {
+                GridRow {
+                    Text("Type")
+                    Text(property.type)
+                }
+                
+                if let description = property.description, !description.isEmpty {
+                    GridRow(alignment: .top) {
+                        Text("Description")
+                        Text(description)
+                    }
+                }
             }
             .font(DesignSystem.Typography.body)
-
-            if let description = property.description, !description.isEmpty {
-                HStack(alignment: .top) {
-                    Text("Description")
-                        .foregroundColor(DesignSystem.Colors.textSecondary)
-                        .frame(width: 80, alignment: .leading)
-                    Text(description)
-                        .foregroundColor(DesignSystem.Colors.textPrimary)
-                    Spacer()
-                }
-                .font(DesignSystem.Typography.body)
-            }
+            .foregroundColor(DesignSystem.Colors.textSecondary)
         }
-        .padding()
-        .background(Color.black.opacity(0.2))
+        .padding(DesignSystem.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(DesignSystem.Colors.backgroundSecondary)
         .cornerRadius(DesignSystem.CornerRadius.sm)
     }
 }

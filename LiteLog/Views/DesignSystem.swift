@@ -225,3 +225,13 @@ extension Color {
         )
     }
 }
+
+struct SectionHeader: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(DesignSystem.Typography.title)
+            .foregroundColor(DesignSystem.Colors.textPrimary)
+    }
+}
