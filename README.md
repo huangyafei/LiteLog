@@ -27,8 +27,10 @@ Inspired by [Linear](https://linear.app), LiteLog is dedicated to bringing a mod
 - **API Key Management**: Automatically fetches and displays all virtual API keys from your LiteLLM instance, with support for showing aliases or key names.
 - **Log Inspection**:
     - Clearly displays the log list for each key, including status, model, duration, cost, and other critical information.
-    - Click a log entry to view the full request and response payloads.
-    - Provides a one-click copy feature for JSON payloads.
+    - **Enhanced Payload Views**: Click a log entry to view full request and response payloads with new "Formatted" and "JSON" views.
+        - **"JSON" View**: Presents pretty-printed JSON with a one-click copy feature.
+        - **"Formatted" View (Phase 1)**: Displays chat messages extracted from payloads in a chat-bubble-like format, grouped by role (System, User, Assistant), each with a copy-to-clipboard button. **Now also handles and displays tool calls within Assistant messages, even if the content is empty.**
+    - **Intuitive View Switching**: Easily switch between "Formatted" and "JSON" payload views using a custom Linear-style picker.
 - **State Persistence**:
     - Automatically saves the LiteLLM Base URL and Admin API Key.
     - Remembers the last selected API key and automatically loads it on launch.
