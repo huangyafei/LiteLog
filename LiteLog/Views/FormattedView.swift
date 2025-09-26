@@ -45,32 +45,50 @@ struct FormattedView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxl) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
                 // LLOG-12: Add Tools Definition Section
                 if !toolDefinitions.isEmpty {
                     ToolsSectionView(
                         toolDefinitions: toolDefinitions,
                         calledToolNames: calledToolNames
                     )
+                    
+                    if !messages.isEmpty {
+                        Divider()
+                            .padding(.vertical, DesignSystem.Spacing.lg)
+                    }
                 }
                 
                 // Existing Messages Section
                 if !messages.isEmpty {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                        Text("Messages")
-                            .font(DesignSystem.Typography.titleSmall)
-                            .foregroundColor(DesignSystem.Colors.textSecondary)
-                            .padding(.horizontal, DesignSystem.Spacing.md)
-                        
+                        HStack {
+                            SectionHeader(title: "Messages")
+                            Spacer()
+                        }
+
                         ForEach(messages) { message in
                             VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                                Text(message.role.capitalized)
-                                    .font(DesignSystem.Typography.titleSmall)
-                                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                                    .padding(.horizontal, DesignSystem.Spacing.md)
+                                // Title row with copy button
+                                HStack {
+                                    Text(message.role.capitalized)
+                                        .font(DesignSystem.Typography.titleSmall)
+                                        .foregroundColor(DesignSystem.Colors.textSecondary)
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: { copyToClipboard(message) }) {
+                                        Image(systemName: "doc.on.doc")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                                .padding(.horizontal, DesignSystem.Spacing.md)
 
                                 MessageCard(message: message)
                             }
+                            .padding(.bottom, DesignSystem.Spacing.lg)
                         }
                     }
                 } else if toolDefinitions.isEmpty {
@@ -79,9 +97,14 @@ struct FormattedView: View {
                         .padding()
                 }
             }
-            .padding(DesignSystem.Spacing.xl)
         }
         .frame(minHeight: 400)
+    }
+    
+    private func copyToClipboard(_ message: ChatMessage) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(message.copyableString, forType: .string)
     }
 }
 
@@ -90,36 +113,15 @@ struct MessageCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-            HStack {
-                Spacer()
-                Button(action: {
-                    copyToClipboard(message)
-                }) {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 12))
-                        .foregroundColor(DesignSystem.Colors.textSecondary)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            
             if let content = message.content, !content.isEmpty {
                 Text(content)
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.textPrimary)
                     .textSelection(.enabled)
             } else if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
                     ForEach(toolCalls) { toolCall in
-                        VStack(alignment: .leading) {
-                            Text("Tool Call: \(toolCall.function.name)")
-                                .font(DesignSystem.Typography.bodyMedium)
-                                .foregroundColor(DesignSystem.Colors.textPrimary)
-                            Text("Arguments: \(toolCall.function.arguments)")
-                                .font(DesignSystem.Typography.caption)
-                                .foregroundColor(DesignSystem.Colors.textSecondary)
-                                .textSelection(.enabled)
-                        }
-                        .padding(.vertical, DesignSystem.Spacing.xs)
+                        ToolCallView(toolCall: toolCall)
                     }
                 }
             } else {
@@ -137,19 +139,38 @@ struct MessageCard: View {
                 .stroke(DesignSystem.Colors.border, lineWidth: 1)
         )
     }
-    
-    private func copyToClipboard(_ message: ChatMessage) {
-        let textToCopy: String
-        if let content = message.content, !content.isEmpty {
-            textToCopy = content
-        } else if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
-            textToCopy = toolCalls.map { "Tool: \($0.function.name), Args: \($0.function.arguments)" }.joined(separator: "\n")
-        } else {
-            textToCopy = ""
+}
+
+// MARK: - ToolCallView
+
+struct ToolCallView: View {
+    let toolCall: ToolCall
+
+    var body: some View {
+        HStack(alignment: .top, spacing: DesignSystem.Spacing.md) {
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .font(.system(size: 14))
+                .foregroundColor(DesignSystem.Colors.textTertiary)
+                .padding(.top, 2) // Fine-tune alignment
+
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                Text(toolCall.function.name)
+                    .font(DesignSystem.Typography.bodyMedium)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
+                
+                Text(toolCall.function.arguments)
+                    .font(DesignSystem.Typography.mono)
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                    .textSelection(.enabled)
+            }
         }
-        
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(textToCopy, forType: .string)
+        .padding(DesignSystem.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(DesignSystem.Colors.backgroundSecondary)
+        .cornerRadius(DesignSystem.CornerRadius.sm)
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm)
+                .stroke(DesignSystem.Colors.border, lineWidth: 1)
+        )
     }
 }

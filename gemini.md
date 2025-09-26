@@ -78,6 +78,7 @@
     - **LinearButtonStyle**: 三种按钮样式 (primary/secondary/ghost)。
     - **LinearTextFieldStyle**: 自定义文本输入框样式。
     - **LinearPicker**: 自定义的分段选择器，用于在「Formatted」和「JSON」视图之间切换，提供 Linear 风格的视觉体验。
+    - **SectionHeader**: 用于详情视图中各大区域（如 Tools, Messages, Request Payload）的统一标题样式。
 
 - **关于窗口**:
     - 通过菜单栏 (`LiteLog -> About LiteLog`) 打开。
@@ -116,8 +117,12 @@
         - ContentViewModel：读取并应用 Lookback/Page Size；为每个 Key 维护时间窗口 `[startDate, endDate]`；`loadOlder()` 将窗口向过去滑动一个 Lookback 跨度并增量追加（含去重）；使用 `isPaginating` 避免全屏 Loading；`manualRefresh()` 现在仅重置并重新加载当前 Key 的日志；新增 `refreshKeysAndLogs()` 方法，用于清空所有缓存并重新获取 Key 列表。
     - 使用 `NotificationCenter` 在设置保存后通知 `AppEnvironment` 重新加载 `APIService`。
     - **视图渲染策略**: 为了解决因状态提升到 `AppEnvironment` 后，主视图“过度观察”而导致的性能问题，`ContentView` 被拆分为独立的 `SidebarView` 和 `LogListView`。每个子视图仅观察其自身所需的数据（例如 `SidebarView` 只关心 `virtualKeys` 的变化），从而避免了不必要的全局刷新，保证了 UI 的流畅性。这体现了在 SwiftUI 中通过拆分视图层级来实现精准、高效渲染的最佳实践。同时，将 `currentLogEntries` 等派生数据作为 `AppEnvironment` 的计算属性，实现了业务逻辑的归一。
-- **数据模型扩展**: 新增 `Payload.swift` 文件，定义了 `ChatMessage`、`ToolCall`、`FunctionCall`、`ChatRequestPayload` 和 `ChatResponsePayload` 等结构体，用于结构化解码和处理聊天相关的载荷数据，特别是对工具调用的支持。
-- **视图重构**: 为了支持复杂的工具定义UI，新增了 `ToolsSectionView.swift` 文件。此外，`FormattedView` 进行了重构，**使用计算属性来缓存解码后的 JSON 数据**，避免了多次重复解析，提升了性能。原有的 `MessageCard` 组件则继续用于以 Linear 风格展示聊天消息流。
+- **数据模型扩展**: 新增 `Payload.swift` 文件，定义了 `ChatMessage`、`ToolCall`、`FunctionCall`、`ChatRequestPayload` 和 `ChatResponsePayload` 等结构体。这些模型不仅用于解码，还将部分业务逻辑（如生成可复制的字符串 `copyableString`）封装在内，遵循了“将逻辑移向数据”的设计原则，以保持视图层的简洁。
+- **视图重构 (LLOG-14 优化)**: 为了大幅提升详情视图的视觉质量和布局一致性，进行了多项重构：
+    - **统一标题**: 创建了可复用的 `SectionHeader` 组件，并应用于所有详情页的大标题（如 Tools, Messages, Request Payload），确保了视觉风格的统一。
+    - **优化工具调用**: 创建了独立的 `ToolCallView` 组件，以卡片化、带图标和结构化的形式展示 Assistant 消息中的工具调用，取代了原有的简陋文本样式。
+    - **优化工具定义**: 重构了 `ToolsSectionView` 及其子视图 `ParameterRowView` 的内部布局，使用 `Grid` 替代了僵硬的 `HStack`，并修正了对齐与间距问题，使其在展开时能撑满宽度并保持优雅。
+    - **优化消息卡片**: 彻底重构了 `MessageCard` 的布局，将“复制”按钮从卡片内部移至外部的“角色标题”行，从根本上解决了边距不一致和元素重叠的问题，使卡片成为一个布局纯粹、边距对称的内容容器。
 
 - **数据与网络层**:
     - `APIService.fetchLogs` 更新：接受 `startDate`、`endDate`、`pageSize` 参数（时间格式 `yyyy-MM-dd HH:mm:ss`），外部可控时间范围与分页大小。

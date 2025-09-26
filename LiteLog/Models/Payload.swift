@@ -22,6 +22,16 @@ struct ChatMessage: Codable, Hashable, Identifiable {
         // If content is nil, but toolCalls exist, we should ensure content is not just an empty string.
         // For now, we'll keep content as optional String.
     }
+    
+    var copyableString: String {
+        if let content = content, !content.isEmpty {
+            return content
+        } else if let toolCalls = toolCalls, !toolCalls.isEmpty {
+            return toolCalls.map { "Tool: \($0.function.name), Args: \($0.function.arguments)" }.joined(separator: "\n")
+        } else {
+            return ""
+        }
+    }
 }
 
 struct ToolCall: Codable, Hashable, Identifiable {

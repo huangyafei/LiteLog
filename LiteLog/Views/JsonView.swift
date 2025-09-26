@@ -8,9 +8,7 @@ struct JsonView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
             HStack {
-                Text(title)
-                    .font(DesignSystem.Typography.title)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
+                SectionHeader(title: title)
                 
                 Spacer()
                 
