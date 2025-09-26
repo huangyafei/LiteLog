@@ -5,22 +5,76 @@ struct FormattedView: View {
     let requestPayload: Data?
     let responsePayload: Data?
 
+    // MARK: - Computed Properties for Decoded Data
+
+    private var decodedRequest: ChatRequestPayload? {
+        guard let data = requestPayload else { return nil }
+        return try? JSONDecoder().decode(ChatRequestPayload.self, from: data)
+    }
+
+    private var decodedResponse: ChatResponsePayload? {
+        guard let data = responsePayload else { return nil }
+        return try? JSONDecoder().decode(ChatResponsePayload.self, from: data)
+    }
+
+    private var toolDefinitions: [ToolDefinition] {
+        decodedRequest?.tools ?? []
+    }
+
+    private var messages: [ChatMessage] {
+        var allMessages = decodedRequest?.messages ?? []
+        if let responseMessage = decodedResponse?.choices.first?.message {
+            allMessages.append(responseMessage)
+        }
+        return allMessages
+    }
+
+    private var calledToolNames: Set<String> {
+        guard let responseMessage = decodedResponse?.choices.first?.message else { return [] }
+        
+        var names = Set<String>()
+        if responseMessage.role == "assistant", let toolCalls = responseMessage.toolCalls {
+            for call in toolCalls {
+                names.insert(call.function.name)
+            }
+        }
+        return names
+    }
+
+    // MARK: - Body
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxl) {
-                if let messages = extractMessages() {
-                    ForEach(messages) { message in
-                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                            Text(message.role.capitalized)
-                                .font(DesignSystem.Typography.titleSmall)
-                                .foregroundColor(DesignSystem.Colors.textSecondary)
-                                .padding(.horizontal, DesignSystem.Spacing.md)
+                // LLOG-12: Add Tools Definition Section
+                if !toolDefinitions.isEmpty {
+                    ToolsSectionView(
+                        toolDefinitions: toolDefinitions,
+                        calledToolNames: calledToolNames
+                    )
+                }
+                
+                // Existing Messages Section
+                if !messages.isEmpty {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                        Text("Messages")
+                            .font(DesignSystem.Typography.titleSmall)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                            .padding(.horizontal, DesignSystem.Spacing.md)
+                        
+                        ForEach(messages) { message in
+                            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                                Text(message.role.capitalized)
+                                    .font(DesignSystem.Typography.titleSmall)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                                    .padding(.horizontal, DesignSystem.Spacing.md)
 
-                            MessageCard(message: message)
+                                MessageCard(message: message)
+                            }
                         }
                     }
-                } else {
-                    Text("No messages found in payload.")
+                } else if toolDefinitions.isEmpty {
+                    Text("No messages or tool definitions found in payload.")
                         .foregroundColor(DesignSystem.Colors.textSecondary)
                         .padding()
                 }
@@ -28,27 +82,6 @@ struct FormattedView: View {
             .padding(DesignSystem.Spacing.xl)
         }
         .frame(minHeight: 400)
-    }
-
-    private func extractMessages() -> [ChatMessage]? {
-        var messages: [ChatMessage] = []
-
-        if let requestData = requestPayload {
-            let decoder = JSONDecoder()
-            if let request = try? decoder.decode(ChatRequestPayload.self, from: requestData) {
-                messages.append(contentsOf: request.messages)
-            }
-        }
-
-        if let responseData = responsePayload {
-            let decoder = JSONDecoder()
-            if let response = try? decoder.decode(ChatResponsePayload.self, from: responseData),
-               let choice = response.choices.first {
-                messages.append(choice.message)
-            }
-        }
-
-        return messages.isEmpty ? nil : messages
     }
 }
 

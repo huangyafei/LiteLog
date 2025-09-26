@@ -32,7 +32,9 @@
 - **日志详情视图增强**:
     - 在右侧「详情视图」面板中引入了日志载荷（请求/响应）的标签页视图，允许用户在「Formatted」（格式化）和「JSON」表示之间切换。
     - **「JSON」视图**: 显示美观的 JSON 格式数据，并提供一键复制到剪贴板功能。
-    - **「Formatted」视图**: (阶段一) 以聊天气泡形式显示从请求和响应载荷中提取的聊天消息，按角色（System, User, Assistant）分组，每条消息都带有复制到剪贴板功能。**现在，当 Assistant 消息内容为空但包含工具调用时，Formatted 视图会清晰地展示这些工具调用信息。**
+    - **「Formatted」视图**: 智能解析请求和响应载荷，提供一个结构化的视图。
+        - **工具定义卡片**: 当请求中包含工具定义时，这些工具会显示在视图顶部一个专属的“Tools”区域。每个工具都以一个可折叠的卡片形式展示，详细说明其功能描述和参数。如果该工具在最终响应中被调用，则会显示“CALLED”徽章。
+        - **消息流**: 在工具区域下方，以聊天气泡形式展示消息流，按角色（System, User, Assistant）分组，每条消息都带有复制到剪贴板功能。当 Assistant 消息内容为空但包含工具调用时，Formatted 视图会清晰地展示这些工具调用信息。
 
 - **状态持久化**: 应用通过 `UserDefaults` 记住用户上次选择的虚拟 Key，在下次启动时自动选中并加载其日志。
     - 额外持久化：回溯时长（`LiteLogLookbackHours`）与分页条数（`LiteLogPageSize`）。
@@ -61,7 +63,7 @@
     - **中栏 (Content List)**: 显示所选 Key 的日志条目列表，采用现代化卡片设计。每条日志卡片显示状态徽章、模型名称、时间戳、耗时、消费和 Token 数量。卡片具有悬停效果，整个区域可点击。顶部显示"Logs"标题和日志计数。该栏的最小宽度为 450px，理想宽度为 500px。
         - 底部悬浮「Load Older」按钮：到达底部时高亮提示，内容不足一屏不高亮；点击后增量加载更早时间段日志。
         - 顶部悬浮「Back to Latest」按钮：离开顶部时显示，回到顶部自动隐藏；点击仅滚动，不触发网络刷新。
-    - **右栏 (Detail View)**: 显示所选日志的详细信息，采用卡片分组布局。包含日志概览、详细信息和载荷数据三个卡片区域。其中详细信息区域会展示 Provider 和 API Base（仅域名）等。**载荷数据区域现在支持「Formatted」和「JSON」两种视图切换，其中「JSON」视图显示格式化后的 JSON 文本并提供复制功能，「Formatted」视图（阶段一）则以聊天气泡形式展示消息流，并能处理 Assistant 消息中内容为空但包含工具调用的情况。**当未选中日志时显示居中的提示文本。
+    - **右栏 (Detail View)**: 显示所选日志的详细信息，采用卡片分组布局。包含日志概览、详细信息和载荷数据三个卡片区域。其中详细信息区域会展示 Provider 和 API Base（仅域名）等。**载荷数据区域现在支持「Formatted」和「JSON」两种视图切换，其中「JSON」视图显示格式化后的 JSON 文本并提供复制功能，「Formatted」视图则以更智能的形式展示载荷：它会首先渲染一个包含所有已定义工具的可折叠“Tools”区域，然后在其下方以聊天气泡形式展示消息流，并能处理 Assistant 消息中内容为空但包含工具调用的情况。**当未选中日志时显示居中的提示文本。
 
 - **设置界面**:
     - 采用现代化表单设计，使用自定义的 `LinearTextFieldStyle` 样式。
@@ -115,7 +117,7 @@
     - 使用 `NotificationCenter` 在设置保存后通知 `AppEnvironment` 重新加载 `APIService`。
     - **视图渲染策略**: 为了解决因状态提升到 `AppEnvironment` 后，主视图“过度观察”而导致的性能问题，`ContentView` 被拆分为独立的 `SidebarView` 和 `LogListView`。每个子视图仅观察其自身所需的数据（例如 `SidebarView` 只关心 `virtualKeys` 的变化），从而避免了不必要的全局刷新，保证了 UI 的流畅性。这体现了在 SwiftUI 中通过拆分视图层级来实现精准、高效渲染的最佳实践。同时，将 `currentLogEntries` 等派生数据作为 `AppEnvironment` 的计算属性，实现了业务逻辑的归一。
 - **数据模型扩展**: 新增 `Payload.swift` 文件，定义了 `ChatMessage`、`ToolCall`、`FunctionCall`、`ChatRequestPayload` 和 `ChatResponsePayload` 等结构体，用于结构化解码和处理聊天相关的载荷数据，特别是对工具调用的支持。
-- **视图重构**: `FormattedView` 进行了重构，引入 `MessageCard` 组件，以更符合 Linear 风格的方式展示聊天消息流，并增强了对 Assistant 消息中工具调用的显示。
+- **视图重构**: 为了支持复杂的工具定义UI，新增了 `ToolsSectionView.swift` 文件。此外，`FormattedView` 进行了重构，**使用计算属性来缓存解码后的 JSON 数据**，避免了多次重复解析，提升了性能。原有的 `MessageCard` 组件则继续用于以 Linear 风格展示聊天消息流。
 
 - **数据与网络层**:
     - `APIService.fetchLogs` 更新：接受 `startDate`、`endDate`、`pageSize` 参数（时间格式 `yyyy-MM-dd HH:mm:ss`），外部可控时间范围与分页大小。
@@ -222,8 +224,55 @@ struct FunctionCall: Codable, Hashable {
     let arguments: String // Arguments are typically a JSON string
 }
 
+// For LLOG-12: Tool Definition Card
+struct ToolDefinition: Codable, Hashable, Identifiable {
+    var id = UUID()
+    let type: String
+    let function: FunctionDefinition
+    
+    enum CodingKeys: String, CodingKey {
+        case type, function
+    }
+}
+
+struct FunctionDefinition: Codable, Hashable {
+    let name: String
+    let description: String?
+    let parameters: ParametersDefinition?
+}
+
+struct ParametersDefinition: Codable, Hashable {
+    let type: String?
+    let properties: [String: PropertyDefinition]?
+    let required: [String]?
+}
+
+struct PropertyDefinition: Codable, Hashable {
+    let type: String
+    let description: String?
+    let `enum`: [String]?
+}
+
+
 struct ChatRequestPayload: Codable {
     let messages: [ChatMessage]
+    let tools: [ToolDefinition]?
+
+    enum CodingKeys: String, CodingKey {
+        case messages, tools
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        messages = try container.decode([ChatMessage].self, forKey: .messages)
+        tools = try container.decodeIfPresent([ToolDefinition].self, forKey: .tools)
+    }
+    
+    // Add a default initializer to keep memberwise initializer for other parts of the app if needed
+    init(messages: [ChatMessage], tools: [ToolDefinition]?) {
+        self.messages = messages
+        self.tools = tools
+    }
 }
 
 struct ChatResponsePayload: Codable {
