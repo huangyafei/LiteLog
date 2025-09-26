@@ -29,7 +29,8 @@ Inspired by [Linear](https://linear.app), LiteLog is dedicated to bringing a mod
     - Clearly displays the log list for each key, including status, model, duration, cost, and other critical information.
     - **Enhanced Payload Views**: Click a log entry to view full request and response payloads with new "Formatted" and "JSON" views.
         - **"JSON" View**: Presents pretty-printed JSON with a one-click copy feature.
-        - **"Formatted" View (Phase 1)**: Displays chat messages extracted from payloads in a chat-bubble-like format, grouped by role (System, User, Assistant), each with a copy-to-clipboard button. **Now also handles and displays tool calls within Assistant messages, even if the content is empty.**
+        - **"Formatted" View**: Displays chat messages extracted from payloads in a chat-bubble-like format, grouped by role (System, User, Assistant), each with a copy-to-clipboard button. **Now also handles and displays tool calls within Assistant messages, even if the content is empty.**
+        - **Tool Definition Cards**: When tools are defined in the request, they are now displayed in a dedicated "Tools" section within the Formatted View. Each tool is shown in a collapsible card, detailing its description and parameters. A "CALLED" badge will appear if the tool is invoked in the final response.
     - **Intuitive View Switching**: Easily switch between "Formatted" and "JSON" payload views using a custom Linear-style picker.
 - **State Persistence**:
     - Automatically saves the LiteLLM Base URL and Admin API Key.
