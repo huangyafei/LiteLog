@@ -52,10 +52,27 @@ struct LogListView: View {
                         Image(systemName: "doc.text")
                             .font(.system(size: 24))
                             .foregroundColor(DesignSystem.Colors.textTertiary)
-                        Text("No logs for this key")
+                        Text("No logs for this key in the last 24 hours.")
                             .font(DesignSystem.Typography.body)
                             .foregroundColor(DesignSystem.Colors.textSecondary)
                             .padding(.top, DesignSystem.Spacing.sm)
+                        
+                        Button(action: {
+                            appEnvironment.loadOlder()
+                        }) {
+                            HStack(spacing: DesignSystem.Spacing.xs) {
+                                if appEnvironment.isPaginating {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                }
+                                Text("Load Older")
+                                    .font(DesignSystem.Typography.caption)
+                            }
+                        }
+                        .buttonStyle(LinearButtonStyle(variant: .primary))
+                        .disabled(appEnvironment.isLoadingLogs || appEnvironment.isPaginating)
+                        .padding(.top, DesignSystem.Spacing.lg)
+
                         Spacer()
                     }
                 } else {
