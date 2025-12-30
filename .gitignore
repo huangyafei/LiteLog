@@ -19,3 +19,7 @@ Packages/
 # User-specific files
 *.xcworkspace
 *.xcuserdatad/
+
+# Agent Files
+
+.claude

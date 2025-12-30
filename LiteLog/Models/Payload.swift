@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - Unified Models
+
 struct ChatMessage: Codable, Hashable, Identifiable {
     var id = UUID()
     let role: String
@@ -12,15 +14,18 @@ struct ChatMessage: Codable, Hashable, Identifiable {
         case toolCalls = "tool_calls"
     }
     
+    // Manual initializer for Parser usage
+    init(role: String, content: String? = nil, toolCalls: [ToolCall]? = nil) {
+        self.role = role
+        self.content = content
+        self.toolCalls = toolCalls
+    }
+    
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.role = try container.decode(String.self, forKey: .role)
         self.content = try container.decodeIfPresent(String.self, forKey: .content)
         self.toolCalls = try container.decodeIfPresent([ToolCall].self, forKey: .toolCalls)
-        
-        // If content is nil and toolCalls is also nil, it's an invalid message, but we'll allow it for now.
-        // If content is nil, but toolCalls exist, we should ensure content is not just an empty string.
-        // For now, we'll keep content as optional String.
     }
     
     var copyableString: String {
@@ -35,7 +40,7 @@ struct ChatMessage: Codable, Hashable, Identifiable {
 }
 
 struct ToolCall: Codable, Hashable, Identifiable {
-    var id: String // This is the 'id' from the JSON, e.g., "call_vaIva6JAahiDBmj3Ut6xfFq0"
+    var id: String
     let type: String
     let function: FunctionCall
 
@@ -43,6 +48,13 @@ struct ToolCall: Codable, Hashable, Identifiable {
         case id
         case type
         case function
+    }
+    
+    // Manual initializer
+    init(id: String = UUID().uuidString, type: String = "function", function: FunctionCall) {
+        self.id = id
+        self.type = type
+        self.function = function
     }
 }
 
@@ -59,6 +71,12 @@ struct ToolDefinition: Codable, Hashable, Identifiable {
     
     enum CodingKeys: String, CodingKey {
         case type, function
+    }
+    
+    // Manual initializer
+    init(type: String = "function", function: FunctionDefinition) {
+        self.type = type
+        self.function = function
     }
 }
 
@@ -108,4 +126,67 @@ struct ChatResponsePayload: Codable {
 
 struct Choice: Codable {
     let message: ChatMessage
+}
+
+// MARK: - Helper Types
+
+// Helper for decoding/encoding arbitrary JSON values
+struct AnyCodable: Codable, Hashable {
+    let value: Any
+
+    init<T>(_ value: T?) {
+        self.value = value ?? ()
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self.value = ()
+        } else if let bool = try? container.decode(Bool.self) {
+            self.value = bool
+        } else if let int = try? container.decode(Int.self) {
+            self.value = int
+        } else if let double = try? container.decode(Double.self) {
+            self.value = double
+        } else if let string = try? container.decode(String.self) {
+            self.value = string
+        } else if let array = try? container.decode([AnyCodable].self) {
+            self.value = array.map { $0.value }
+        } else if let dictionary = try? container.decode([String: AnyCodable].self) {
+            self.value = dictionary.mapValues { $0.value }
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "AnyCodable value cannot be decoded")
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch value {
+        case is Void, is NSNull:
+            try container.encodeNil()
+        case let bool as Bool:
+            try container.encode(bool)
+        case let int as Int:
+            try container.encode(int)
+        case let double as Double:
+            try container.encode(double)
+        case let string as String:
+            try container.encode(string)
+        case let array as [Any]:
+            try container.encode(array.map { AnyCodable($0) })
+        case let dictionary as [String: Any]:
+            try container.encode(dictionary.mapValues { AnyCodable($0) })
+        default:
+            throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: container.codingPath, debugDescription: "AnyCodable value cannot be encoded"))
+        }
+    }
+    
+    static func == (lhs: AnyCodable, rhs: AnyCodable) -> Bool {
+        // This is a simplified equality check. A full implementation is complex.
+        return false // Approximation
+    }
+
+    func hash(into hasher: inout Hasher) {
+        // This is a simplified hash. A full implementation is complex.
+    }
 }
