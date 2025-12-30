@@ -1,41 +1,50 @@
-
 import SwiftUI
 
 struct FormattedView: View {
     let requestPayload: Data?
     let responsePayload: Data?
+    let provider: String?
+    let model: String?
 
-    // MARK: - Computed Properties for Decoded Data
+    // MARK: - Computed Properties for Parsed Data
 
-    private var decodedRequest: ChatRequestPayload? {
-        guard let data = requestPayload else { return nil }
-        return try? JSONDecoder().decode(ChatRequestPayload.self, from: data)
+    private var parser: PayloadParser {
+        PayloadParserFactory.create(provider: provider, model: model)
     }
 
-    private var decodedResponse: ChatResponsePayload? {
+    private var parsedRequest: UnifiedPayload? {
+        guard let data = requestPayload else { return nil }
+        return parser.parseRequest(data: data)
+    }
+
+    private var parsedResponse: UnifiedPayload? {
         guard let data = responsePayload else { return nil }
-        return try? JSONDecoder().decode(ChatResponsePayload.self, from: data)
+        return parser.parseResponse(data: data)
     }
 
     private var toolDefinitions: [ToolDefinition] {
-        decodedRequest?.tools ?? []
+        parsedRequest?.tools ?? []
     }
 
     private var messages: [ChatMessage] {
-        var allMessages = decodedRequest?.messages ?? []
-        if let responseMessage = decodedResponse?.choices.first?.message {
-            allMessages.append(responseMessage)
+        var allMessages = parsedRequest?.messages ?? []
+        if let responseMessages = parsedResponse?.messages {
+            allMessages.append(contentsOf: responseMessages)
         }
         return allMessages
     }
 
     private var calledToolNames: Set<String> {
-        guard let responseMessage = decodedResponse?.choices.first?.message else { return [] }
+        // Iterate over all assistant messages to find tool calls
+        // Usually the last message in response is the assistant's reply/tool call
+        guard let responseMessages = parsedResponse?.messages else { return [] }
         
         var names = Set<String>()
-        if responseMessage.role == "assistant", let toolCalls = responseMessage.toolCalls {
-            for call in toolCalls {
-                names.insert(call.function.name)
+        for message in responseMessages {
+            if message.role == "assistant" || message.role == "model", let toolCalls = message.toolCalls {
+                for call in toolCalls {
+                    names.insert(call.function.name)
+                }
             }
         }
         return names
@@ -113,18 +122,30 @@ struct MessageCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+            // Display Content if available
             if let content = message.content, !content.isEmpty {
                 Text(content)
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.textPrimary)
                     .textSelection(.enabled)
-            } else if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+            }
+            
+            // Display Tool Calls if available
+            if let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+                if message.content != nil && !message.content!.isEmpty {
+                    Divider()
+                        .padding(.vertical, DesignSystem.Spacing.xs)
+                }
+                
                 VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
                     ForEach(toolCalls) { toolCall in
                         ToolCallView(toolCall: toolCall)
                     }
                 }
-            } else {
+            }
+            
+            // Fallback for empty message
+            if (message.content == nil || message.content!.isEmpty) && (message.toolCalls == nil || message.toolCalls!.isEmpty) {
                 Text("Empty message")
                     .font(DesignSystem.Typography.body)
                     .foregroundColor(DesignSystem.Colors.textSecondary)

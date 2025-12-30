@@ -130,7 +130,9 @@ struct LogDetailView: View {
     private func payloads(log: LogEntry) -> some View {
         PayloadView(
             requestPayload: log.requestPayload,
-            responsePayload: log.responsePayload
+            responsePayload: log.responsePayload,
+            provider: log.customLlmProvider,
+            model: log.model
         )
     }
     

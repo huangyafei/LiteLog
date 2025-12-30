@@ -4,6 +4,8 @@ import SwiftUI
 struct PayloadView: View {
     let requestPayload: Data?
     let responsePayload: Data?
+    let provider: String?
+    let model: String?
 
     @State private var selectedView: ViewType = .formatted
 
@@ -22,7 +24,12 @@ struct PayloadView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if selectedView == .formatted {
-                FormattedView(requestPayload: requestPayload, responsePayload: responsePayload)
+                FormattedView(
+                    requestPayload: requestPayload,
+                    responsePayload: responsePayload,
+                    provider: provider,
+                    model: model
+                )
             } else {
                 JsonView(title: "Request Payload", data: requestPayload)
                 JsonView(title: "Response Payload", data: responsePayload)
